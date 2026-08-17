@@ -1,109 +1,169 @@
-# WinfoTest AI Core Backend
+# WinfoTest AI Intelligence Engine
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)
-![Architecture](https://img.shields.io/badge/architecture-FastAPI%20%7C%20Qdrant%20%7C%20Postgres-lightgrey)
-![Guardrails](https://img.shields.io/badge/AST%20Scanner-Enabled-orange)
+<div align="center">
 
-This repository contains the backend service for the WinfoTest AI system. It provides an LLM-driven intent routing architecture over a local vector store and PostgreSQL database, enforcing strict repository-pattern data access for enterprise ERP QA Automation.
+![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?logo=postgresql&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-DC382D?logo=qdrant&logoColor=white)
+![Ollama](https://img.shields.io/badge/Local%20LLM-Qwen%202.5-black?logo=ollama&logoColor=white)
+![Architecture](https://img.shields.io/badge/Architecture-Hybrid%20RAG%20%7C%20Zero--Hardcoding-success)
 
-## Table of Contents
-1. [System Architecture](#system-architecture)
-2. [Core Engineering Guardrails](#core-engineering-guardrails)
-3. [Prerequisites & Requirements](#prerequisites--requirements)
-4. [Local Setup & Deployment](#local-setup--deployment)
-5. [Internal API Reference](#internal-api-reference)
-6. [Monitoring & Observability](#monitoring--observability)
-7. [Troubleshooting & Runbooks](#troubleshooting--runbooks)
-8. [Development Workflow & CI/CD](#development-workflow--cicd)
+**A PostgreSQL-grounded, enterprise autonomous AI test intelligence platform for Oracle Cloud ERP QA automation, hybrid RAG semantic discovery, dynamic test step synthesis, failure diagnosis, and self-healing locator repair.**
+
+[Features](#-key-capabilities) • [Architecture](#-system-architecture) • [UI Overview](#-enterprise-web-interface) • [Guardrails](#-engineering-guardrails) • [Quickstart](#-quickstart--installation) • [API Reference](#-api-reference) • [Testing](#-testing--quality-assurance)
+
+</div>
+
+---
+
+## Executive Summary
+
+Enterprise ERP testing across platforms like Oracle Fusion Cloud (Procure to Pay, Order to Cash, Record to Report, HCM, SCM) is notoriously complex. Test suites suffer from fragile UI dynamic locators, complex multi-stage business rules, lack of semantic searchability, and opaque test failures.
+
+**WinfoTest AI** bridges this gap by acting as an autonomous intelligence and reasoning layer over PostgreSQL test metadata and Qdrant vector spaces. It operates under a **Zero-Hardcoding & 100% Dynamic Grounding Policy**, translating natural language business queries into verified database lookups, high-depth test script generation (15+ steps), automated failure root-cause analysis, and self-healing Playwright/Selenium locator repairs.
+
+---
+
+## Key Capabilities
+
+### 1. Hybrid Intent Router (Dense Vector + Micro-Schema Extraction)
+* **Sub-Second Intent Resolution**: Uses a dense vector router (`all-mpnet-base-v2`) with cosine similarity thresholding (0.70 confidence calibration) to identify tool intents in under 10ms.
+* **Micro-LLM Dynamic Parsing**: Extracts strongly-typed Pydantic arguments using localized greedy decoding (`qwen2.5-coder:1.5b`) without slow conversational overhead.
+
+### 2. Semantic Discovery & Hybrid Search (Vector + Full-Text RAG)
+* **Dense & Keyword Fusion**: Combines Qdrant dense vector search with PostgreSQL ILIKE/full-text keyword ranking.
+* **PostgreSQL Entity Rehydration**: Vector searches return database UUIDs only; 100% of script entities, descriptions, and workflow steps are reloaded live from PostgreSQL to prevent stale AI hallucinations.
+
+### 3. Dynamic High-Depth Step Synthesis (15+ Steps)
+* **Realistic Enterprise Workflow Generation**: Synthesizes 15+ comprehensive ERP automation steps complete with action verbs, UI navigation breadcrumbs, input parameter binds, and validation assertions.
+* **Zero Dummy Fallbacks**: Generates authentic business logic dynamically based on Oracle Cloud Modern Best Practice (MBP) taxonomies.
+
+### 4. End-to-End Test Suite Chaining & Coverage Gap Analysis
+* **Sequential Dependency Sorting**: Assembles multi-stage regression suites across complex enterprise flows (e.g. Requisition -> PO Approval -> Goods Receipt -> AP Invoice Matching -> Payment Hold -> GL Posting).
+* **Process Gap Detection**: Flags missing validation gates and estimates total execution runtimes.
+
+### 5. Root Cause Failure Analysis & Self-Healing Locator Repair
+* **Automated Log Diagnosis**: Analyzes stack traces and Playwright `TimeoutError` logs to explain root causes and recommend actionable fixes.
+* **Dynamic Locator Healing**: Extracts fragile auto-generated dynamic IDs (e.g. Oracle ADF dynamic container tags) directly from error logs and synthesizes resilient semantic XPath/ARIA selectors with calculated resilience scores.
+
+### 6. Test Health, Risk Assessment & Flakiness Scoring
+* **Live Telemetry Analytics**: Queries PostgreSQL execution logs to calculate failure rates, step flakiness, and stability scores across enterprise modules.
 
 ---
 
 ## System Architecture
 
-The AI backend is designed around a strictly decoupled tool-registry pattern. The LLM acts purely as a router and reasoning engine, while data hydration is strictly handled by standard RDBMS queries.
+The platform enforces a decoupled **Tool-Registry & Repository Pattern**, completely separating AI reasoning from database persistence.
 
 ```mermaid
 graph TD
-    Client[Client UI / API] -->|HTTP POST| FastAPI[FastAPI Server]
-    FastAPI --> IntentRouter[LLM Intent Router]
+    User([Enterprise User / QA Engineer]) -->|SSE Stream / JSON| WebUI[Modern Glassmorphic Web UI]
+    WebUI -->|HTTP POST /api/v1/chat/stream| FastAPI[FastAPI Gateway]
     
-    IntentRouter <-->|Prompt & Schema| LLM[Ollama / OpenAI]
-    IntentRouter -->|Validated Args| ToolRegistry[Tool Registry Service]
+    subgraph "Reasoning & Intent Layer"
+        FastAPI --> HybridRouter[Hybrid Intent Router]
+        HybridRouter <-->|Vector Cosine Match| IntentAnchors[(Dense Vector Embeddings)]
+        HybridRouter <-->|Arg Extraction| LocalLLM[Local LLM - Qwen 2.5]
+    end
     
-    ToolRegistry --> VectorDB[(Qdrant Vector DB)]
-    ToolRegistry --> RepoLayer[app/repositories]
+    subgraph "Tool Dispatcher & Core Services"
+        HybridRouter -->|Validated Pydantic Payload| ToolRegistry[Tool Registry Service]
+        ToolRegistry --> StepGen[Step Generation Service]
+        ToolRegistry --> SearchService[Semantic Search Service]
+        ToolRegistry --> SuiteService[Test Suite Service]
+        ToolRegistry --> FailureService[Failure Analysis & Self-Healing Service]
+        ToolRegistry --> ClusterService[Semantic Cluster Service]
+        ToolRegistry --> RiskService[Risk Assessment Service]
+    end
     
-    VectorDB -.->|Returns IDs only| RepoLayer
-    RepoLayer <--> Postgres[(PostgreSQL Source of Truth)]
+    subgraph "Data & Persistence Layer"
+        SearchService <-->|Dense Search| Qdrant[(Qdrant Vector DB)]
+        StepGen & SearchService & SuiteService & FailureService & ClusterService & RiskService -->|Live Entity Rehydration| RepoLayer[Repository Layer]
+        RepoLayer <-->|Strict SQL / ACID| PostgreSQL[(PostgreSQL Source of Truth)]
+    end
 ```
 
-### Architecture Stack
+---
 
-| Component | Technology | Implementation Details |
+## Tech Stack
+
+| Domain | Technology | Purpose |
 | :--- | :--- | :--- |
-| **API Framework** | FastAPI | Asynchronous REST server routing AI and indexing requests. |
-| **LLM Inference** | Ollama / OpenAI | Handles intent classification, query rewriting, and document synthesis. |
-| **Embedding Engine** | `sentence-transformers` | Runs `all-mpnet-base-v2` locally (CPU). Outputs 768-dimensional dense vectors. |
-| **Vector Store** | Qdrant | In-memory/On-disk vector index running on `localhost:6333`. |
-| **RDBMS** | PostgreSQL | Runs on `localhost:5432`. All final entities are hydrated from here. |
-| **ORM** | SQLAlchemy | Synchronous/Asynchronous DB connection pool managing schema state. |
+| **Backend Framework** | FastAPI | Asynchronous API gateway with Server-Sent Events (SSE) streaming |
+| **Relational Database** | PostgreSQL 15+ | Single Source of Truth for test scripts, execution runs, steps, and audit logs |
+| **Vector Database** | Qdrant | On-disk / In-memory vector store hosting 768-dim embeddings |
+| **Embedding Engine** | `sentence-transformers` | Runs `all-mpnet-base-v2` locally on CPU |
+| **Local LLM Engine** | Ollama (`qwen2.5-coder`) | `qwen2.5-coder:1.5b` (Micro-Extractor) & `7b` (Complex Synthesis) |
+| **ORM & Data Access** | SQLAlchemy | Repository-pattern connection pool with strict isolation |
+| **Frontend UI** | Vanilla JS + Tailwind CSS | Responsive UI with CRT diagnostics, dark/light themes, and persistent sessions |
 
 ---
 
-## Core Engineering Guardrails
+## Enterprise Web Interface
 
-This project enforces strict isolation between LLM reasoning and system execution. **Violating these guardrails in pull requests will result in immediate rejection.**
+The frontend provides an enterprise developer experience designed for high-density QA telemetry:
 
-1. **Absolute Source of Truth:** The vector database (Qdrant) is strictly an index. Services *must* reload all entities (scripts, users, processes) directly from PostgreSQL before returning payloads. **Never return raw vector metadata as the final response.**
-2. **Strict Repository Isolation:** Direct SQL queries or ORM calls are restricted exclusively to `app/repositories/*.py`. Routers, tools, and services must never query the database directly.
-3. **No Hardcoded Logic or Silent Fallbacks:** 
-    - Keyword-based routing (e.g., `if "invoice" in query`) is banned. 
-    - Hardcoded canonical schemas (`CANONICAL_ERP_SCHEMAS`) are banned.
-    - If data is ambiguous or missing, the system must return a structured error status (e.g., `not_found`, `ambiguous`). Mock data generation is prohibited.
-4. **Tool Registry Pattern:** LLM requests must map to a registered tool in `tool_registry_service.py`. All inputs and outputs must pass through Pydantic schema validation (`app/schemas/`).
+* **Real-time SSE Streaming**: Instant token streaming for assistant responses alongside structured cards.
+* **Persistent Session History**: Retains full conversational timeline across page refreshes via `localStorage` until explicitly reset.
+* **Live Telemetry & Diagnostics**: Real-time connection monitoring, database grounding indicators, and tool routing analytics.
+* **Dark / Light Theme Toggle**: Persistent aesthetic switching with optimized contrast ratios.
+* **Zero Emojis & Distractions**: Clean, minimal corporate typography using Google Inter and Geist Mono fonts.
 
 ---
 
-## Prerequisites & Requirements
+## Engineering Guardrails
 
-- **OS:** Linux (Ubuntu 22.04+) or Windows with WSL2.
-- **Python:** System Python `3.10` or higher.
-- **RAM:** Minimum 8GB (Requires ~2GB dedicated to loading `all-mpnet-base-v2` into memory).
-- **Dependencies:** `docker` and `docker-compose` for infrastructure.
+To ensure reliability, this codebase enforces strict architectural constraints verified by static AST scanners (`scripts/check_guardrails.py`):
+
+1. **Absolute PostgreSQL Source of Truth**: Qdrant stores only vector embeddings and script UUIDs. Services must rehydrate full records from PostgreSQL before returning responses.
+2. **Strict Repository Pattern Isolation**: Direct SQL statements or ORM queries are restricted exclusively to `app/repositories/`. Routers, tools, and services never query the database directly.
+3. **Zero Hardcoded Business Fallbacks**: Hardcoded script arrays, static locators, or mock data generation are strictly forbidden. If an entity is not found, the system returns an auditable `not_found` or `ambiguous` status.
+4. **Pydantic Validation**: All tool arguments and outputs pass through strict Pydantic schemas (`app/schemas/`).
 
 ---
 
-## Local Setup & Deployment
+## Quickstart & Installation
 
-*Note: This environment is configured to run directly on the system Python installation. No virtual environment is required.*
+### 1. Clone Repository
+```bash
+git clone https://github.com/WinfoJayantT/WINFOAI.git
+cd WINFOAI
+```
 
-### 1. Start Infrastructure Dependencies
-PostgreSQL and Qdrant must be running locally.
-
+### 2. Start Infrastructure (PostgreSQL & Qdrant)
 ```bash
 docker-compose up -d
-docker ps | findstr "5432 6333" # Verify ports on Windows
 ```
 
-### 2. Install Python Dependencies
+### 3. Setup Python Environment & Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration
-Create a `.env` file in the root directory.
+### 4. Pull Local LLMs (via Ollama)
+Ensure Ollama is installed and running:
+```bash
+ollama pull qwen2.5-coder:1.5b
+ollama pull qwen2.5-coder:7b
+```
+
+### 5. Configure Environment Variables
+Copy `.env.example` to `.env` and adjust database credentials:
+```bash
+cp .env.example .env
+```
 
 ```env
-# Server
 ENV=local
-LOG_LEVEL=DEBUG
+LOG_LEVEL=INFO
 
 # Relational Database
-DATABASE_URL=postgresql+psycopg2://winfotest:winfotest@localhost:5432/winfotest
+DATABASE_URL=postgresql+psycopg2://postgres:your_password@localhost:5432/postgres
 DATABASE_SCHEMA=public
 
-# Vector Index
+# Vector Store
 QDRANT_URL=http://localhost:6333
 QDRANT_COLLECTION=winfotest_semantic_scripts
 
@@ -111,82 +171,110 @@ QDRANT_COLLECTION=winfotest_semantic_scripts
 EMBEDDING_MODEL_NAME=all-mpnet-base-v2
 EMBEDDING_DIMENSION=768
 
-# LLM Inference API
-OPENAI_API_KEY=sk-...
-LLM_API_KEY=ollama
+# LLM Inference
+FAST_LLM_MODEL=qwen2.5-coder:1.5b
 LLM_MODEL=qwen2.5-coder:7b
 OLLAMA_BASE_URL=http://localhost:11434/v1
-LLM_TIMEOUT_SECONDS=120.0
 ```
 
-### 4. Initialize Database Schema
-If this is a fresh setup, execute the initialization SQL script to provision the public schema.
-
+### 6. Run Database Initialization
 ```bash
-psql -h localhost -U winfotest -d winfotest -f sql/init_db.sql
+python scripts/init_ai_tables.py
 ```
 
-### 5. Run the API Server
-Start the FastAPI application.
-
+### 7. Launch the Server
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+Open your browser and navigate to **`http://localhost:8000`**.
 
 ---
 
-## Internal API Reference
+## API Reference
 
-### POST `/api/v1/index`
-Trigger asynchronous embedding generation and Qdrant indexing for database records.
+### 1. Streaming Chat Endpoint
+* **URL**: `/api/v1/chat/stream`
+* **Method**: `POST`
+* **Content-Type**: `application/json` (Returns `text/event-stream`)
 
-**Payload:**
+**Request Body:**
+```json
+{
+  "message": "Generate automation steps for entering a matched supplier invoice with 2-way PO matching",
+  "session_id": "default"
+}
+```
+
+**Stream Events:**
+* `data: {"type": "token", "content": "..."}` — Live conversational tokens.
+* `data: {"type": "done", "results": [...]}` — Final structured JSON tool cards.
+
+---
+
+### 2. Semantic Document Indexing
+* **URL**: `/api/v1/index`
+* **Method**: `POST`
+
+**Request Body:**
 ```json
 {
   "fast_mode": true
 }
 ```
 
-### POST `/api/v1/chat`
-Main entrypoint for the LLM intent router. Evaluates the message, rewrites using conversation history, and dispatches to a Pydantic-validated tool.
-
-**Payload:**
+* **URL**: `/api/v1/index/status`
+* **Method**: `GET`
+* **Response**:
 ```json
 {
-  "message": "Execute the AP invoice test script",
-  "session_id": "debug_session_01"
+  "is_indexing": false,
+  "processed_scripts": 44,
+  "total_scripts": 44,
+  "percentage": 100
 }
 ```
 
 ---
 
-## Monitoring & Observability
+## Testing & Quality Assurance
 
-- **Application Logs:** Configured via `LOG_LEVEL` in `.env`. Structured JSON logging should be enabled in production environments for Datadog/ELK ingestion.
-- **Trace Output:** Every tool execution returns a structured `debug_trace` object containing execution time, detected intent, tool selection, parsed arguments, and repository execution paths.
+### Run Unit & Integration Tests
+```bash
+pytest tests/ -v
+```
 
----
-
-## Troubleshooting & Runbooks
-
-| Symptom | Probable Cause | Resolution |
-| :--- | :--- | :--- |
-| **Qdrant Connection Refused** | Container not running or port conflict. | `docker restart qdrant` and ensure port `6333` is free. |
-| **OOM Killed on Indexing** | `sentence-transformers` exhausted system RAM. | Reduce batch size in indexing service or increase host RAM limits. |
-| **LLM Timeout Errors** | Local Ollama instance is overloaded. | Check `OLLAMA_BASE_URL` health. Increase `LLM_TIMEOUT_SECONDS`. |
-| **Database Lock / Hung Query** | Unclosed SQLAlchemy sessions. | Check repository layer for missing `try/finally` session teardowns. |
-
----
-
-## Development Workflow & CI/CD
-
-The project includes an AST scanner to enforce architectural rules statically. **This is enforced in the CI pipeline.**
-
+### Run Static AST Guardrail Checks
 ```bash
 python scripts/check_guardrails.py
 ```
 
-This script parses Python ASTs and regex patterns to ensure:
-- No `session.execute` or `db.query` calls exist outside of `app/repositories/`.
-- Banned dictionary structures (like `CANONICAL_ERP_SCHEMAS`) are not present.
-- Vector search functions do not bypass the PostgreSQL rehydration step.
+---
+
+## Repository Structure
+
+```
+.
+├── app/
+│   ├── clients/             # LLM (Ollama), Vector (Qdrant), and Execution Clients
+│   ├── core/                # Configuration settings and structured logging
+│   ├── models/              # SQLAlchemy ORM database models
+│   ├── repositories/        # Strict SQL persistence layer (Zero direct SQL in services)
+│   ├── schemas/             # Pydantic schemas for intents, tools, and responses
+│   ├── services/            # Core business logic (Router, Search, StepGen, Healing, Suite)
+│   └── main.py              # FastAPI server entrypoint
+├── config/                  # Oracle MBP business process taxonomies
+├── data/                    # Qdrant vector storage mount
+├── scripts/                 # Schema setup, indexing, and guardrail enforcement scripts
+├── sql/                     # PostgreSQL initialization DDL
+├── static/                  # Glassmorphic developer UI (index.html)
+├── tests/                   # Pytest suite
+├── docker-compose.yml       # PostgreSQL and Qdrant container definitions
+├── requirements.txt         # Python package dependencies
+└── README.md                # Enterprise system documentation
+```
+
+---
+
+## License
+
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
