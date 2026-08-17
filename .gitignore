@@ -17,8 +17,12 @@ scratch/
 *.egg-info/
 .DS_Store
 .vscode/
+.antigravityignore
+AGENTS.MD
+PROJECT_CONTEXT_FINAL.md
+requests.http
 
-# Large database dumps & backups
-Data for project/*.sql
-Data for project/*.csv
-Data for project/*.pdf
+# Data directory & large backups
+Data for project/
+Data for project/*
+
