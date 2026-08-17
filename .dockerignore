@@ -1,0 +1,23 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.venv
+venv
+ENV
+env
+.env
+.env.local
+scratch/
+qdrant_local_db/
+.vscode/
+.idea/
+*.log
+.coverage
+htmlcov/
+.DS_Store
+Thumbs.db
+Data for project/

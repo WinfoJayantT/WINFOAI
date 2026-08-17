@@ -1,0 +1,80 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: winfotest_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql+psycopg2://winfotest:winfotest@postgres:5432/winfotest
+      - DATABASE_SCHEMA=public
+      - DB_POOL_SIZE=10
+      - DB_MAX_OVERFLOW=20
+      - DB_POOL_TIMEOUT=30.0
+      - DB_POOL_RECYCLE=1800
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=winfotest_semantic_scripts
+      - EMBEDDING_MODEL_NAME=all-mpnet-base-v2
+      - EMBEDDING_DIMENSION=768
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_API_KEY=${LLM_API_KEY:-mock-ollama-key}
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5-coder:7b}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      - LLM_TIMEOUT_SECONDS=120.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:16
+    container_name: winfotest_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: winfotest
+      POSTGRES_PASSWORD: winfotest
+      POSTGRES_DB: winfotest
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U winfotest -d winfotest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: winfotest_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pg_data:
+  qdrant_data:

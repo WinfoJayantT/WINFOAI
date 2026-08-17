@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.env
+
+# Qdrant local storage
+qdrant_local_db/
+data/qdrant_storage/*
+!data/qdrant_storage/.gitkeep
+
+# Temporary and local scratch files
+scratch/
+.pytest_cache/
+*.egg-info/
+.DS_Store
+.vscode/
+
+# Large database dumps & backups
+Data for project/*.sql
+Data for project/*.csv
+Data for project/*.pdf

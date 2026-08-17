@@ -1,0 +1,626 @@
+[
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Close Subledgers",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Pro-Forma Close Ledgers",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Reconcile Accounts",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Close Ledgers",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Consolidate Subsidiaries",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Review and Confirm Financial and Management Reports",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Publish and Securely Share Financial Statements",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close To Financial Reports",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Account Reconciliation, Financial consolidation and Close, Narrative Reporting, Risk Management)",
+        "l2_process": "Update Financial Forecasts",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Manage Supplier Invoices",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Manage Audits, Disputes, & Approvals",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Manage Prepayments & Discount",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Settle Liabilities",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Review Daily Activity",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Supplier Invoice to Payment",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Schedule Payables Close",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Bank Transaction to Cash Position",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Review Activities",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Bank Transaction to Cash Position",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Bank Validation",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Bank Transaction to Cash Position",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Initiate Interbank Activities",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Bank Transaction to Cash Position",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Manage End Of Period Positions",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Asset Acquisition to Retirement",
+        "product_mix": "ERP Cloud (Financials, Procurement, Project Management)",
+        "l2_process": "Acquire Assets",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Asset Acquisition to Retirement",
+        "product_mix": "ERP Cloud (Financials, Procurement, Project Management)",
+        "l2_process": "Recognize & Register",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Asset Acquisition to Retirement",
+        "product_mix": "ERP Cloud (Financials, Procurement, Project Management)",
+        "l2_process": "Depreciate Assets",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Asset Acquisition to Retirement",
+        "product_mix": "ERP Cloud (Financials, Procurement, Project Management)",
+        "l2_process": "De-recognition & Disposal",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Asset Acquisition to Retirement",
+        "product_mix": "ERP Cloud (Financials, Procurement, Project Management)",
+        "l2_process": "Manage Asset Insights",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Capture Expenses",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Submit Expense Reports and Cash Advance Requests",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Manage Approvals",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Audit Expense Reports",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Process Reimbursement",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Expense Report to Reimbursement",
+        "product_mix": "ERP Cloud (Financials, Risk Management)",
+        "l2_process": "Analyze Trends",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Create & Manage Transactions",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Send Invoices",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Address Billing Issues",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Process Payments",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Manage Adjustments",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Post Receivables Activities",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Invoice To Receipt",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Schedule Receivables Close",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Generate Customer Statements",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Apply Collection Strategies",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Manage Collection Activities",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Manage Settlement",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Optimize Collection Efficiency",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Statement to Collection",
+        "product_mix": "ERP Cloud (Financials)",
+        "l2_process": "Monitor Outstanding Receivables",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Analyze Revenue Policies and Collect Customer Transaction Data",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Identify Accounting Contracts with Customers",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Identify Performance Obligations",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Determine Transaction Price",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Allocate Transaction Price",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Recognize Revenue",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Customer Contract to Revenue",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Revisions and Variations",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Set Budget Strategy",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Allocate Targets",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Determine Baseline Assumptions",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Validated Assumptions",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Drive Consensus",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Monitor and Consolidate",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Budget to Approval",
+        "product_mix": "EPM Cloud(Planning, Enterprise Data Management)",
+        "l2_process": "Approve Budget",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Close Current Period",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Update Forecast with Actuals",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Roll Forecast Forward",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Assess Variances",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Revise Forecasts",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Review and Approve Forecasts",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Report to Forecast",
+        "product_mix": "ERP Cloud (Financials), EPM Cloud (Planning, Profitability and Cost Management)",
+        "l2_process": "Create Management Reports",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Complete Tax Pre-Close Tasks",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Calculate Transfer Pricing Allocations",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Calculate Tax Provisions",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Finalize Tax Provision Reporting",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Post Tax Provision",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Period Close to Tax Provision",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Review Financial Reporting",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Complete Period Close",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Manage Supplemental Data",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Manage Transfer Pricing",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Prepare Reporting Data",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Formulate Filing Documents",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Tax Provision to Statutory Filing",
+        "product_mix": "Cloud ERP (Financials), Cloud EPM (Tax Reporting)",
+        "l2_process": "Complete Statutory Filings",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Define Joint Operation Agreement Terms",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Partner Contributions",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Calculate Overhead (optional)",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Identify Transactions",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Distribute Transactions",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Process Partner Settlement",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Joint Venture Accounting to Settlement",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Support Reporting",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Capture Lease Data",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Approve Lease Records",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Accounting",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Payments",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Amendments",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Support Disclosures",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Lessee Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Terminations",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Define Properties",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Capture Lease Data",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Approve Lease Records",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Accounting",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Billing",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Incorporate Amendments",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Lessor Lease Abstract to Termination",
+        "product_mix": "Cloud ERP (Financials)",
+        "l2_process": "Manage Terminations",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Raise Requisitions",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Approve Requisitions",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Create Purchase Orders",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Approve Purchase Orders",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Dispatch Purchase Orders",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Receive Goods and Services",
+        "is_covered": false
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Manage Invoices",
+        "is_covered": true
+    },
+    {
+        "l1_process": "Requisition to Payment",
+        "product_mix": "Cloud ERP (Procurement, Risk Management, Financials)",
+        "l2_process": "Process Payments",
+        "is_covered": true
+    }
+]

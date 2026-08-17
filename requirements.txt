@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+SQLAlchemy
+psycopg2-binary
+alembic
+qdrant-client
+sentence-transformers
+numpy
+torch
+openai>=1.40.0
+httpx
+pytest
+pytest-asyncio

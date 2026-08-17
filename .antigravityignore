@@ -1,0 +1,27 @@
+# Ignore vector database & data stores
+qdrant_data/
+*.sqlite
+*.db
+*.bin
+
+# Ignore Python caches & virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore logs, debug outputs & traces
+*.log
+debug_traces/
+dumps/
+
+# Ignore test coverage & build artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+dist/
+build/
+*.egg-info/

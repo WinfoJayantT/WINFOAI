@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinfoTest AI Intelligence</title>
+
+  <!-- Preconnect and import fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // Enables class-based dark mode toggling
+      theme: {
+        extend: {
+          colors: {
+            'carbon-ink': '#1a211e',
+            'paper-white': '#ffffff',
+            'true-black': '#000000',
+            'obsidian': '#0c0c0c',
+            'fog': '#eef1f0',
+            'mist': '#e0e0e0',
+            'graphite': '#606562',
+            'ash-border': '#cccfcd',
+            'slate': '#363537',
+            'pewter': '#4e4e4e',
+            'ember-red': '#cc2e39',
+            // Dark mode surface colors
+            'dark-canvas': '#121212',
+            'dark-surface': '#1e1e1e',
+          },
+          fontFamily: {
+            'geist': ['Geist', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            'geist-mono': ['"Geist Mono"', 'ui-monospace', 'monospace'],
+            'exposure': ['"Playfair Display"', 'ui-serif', 'Georgia', 'serif'],
+            'bryant': ['"Barlow Condensed"', 'ui-sans-serif', 'sans-serif'],
+          },
+          letterSpacing: {
+            'bryant': '0.057em',
+            'exposure-lg': '-0.025em',
+          },
+          borderRadius: {
+            'nav': '4px',
+            'cards': '8px',
+            'badges': '9999px',
+            'images': '8px',
+            'inputs': '4px',
+            'buttons': '4px',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Geist', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #e0e0e0;
+      border-radius: 4px;
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+      background: #363537;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #cccfcd;
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #4e4e4e;
+    }
+
+    .hidden-state {
+      display: none !important;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    /* Cyber Diagnostics & Glow Styles */
+    .cyber-glow {
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    .cyber-glow-green {
+      text-shadow: 0 0 8px rgba(39, 201, 63, 0.6);
+    }
+
+    .scanline-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scanline-container::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 50%, rgba(255, 255, 255, 0.03) 51%, transparent 100%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @keyframes radarPing {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    .animate-radar-ping::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: inherit;
+      border-radius: inherit;
+      animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+      z-index: -1;
+    }
+  </style>
+
+  <!-- Script to prevent FOUC (Flash of Unstyled Content) on load -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+
+<body
+  class="bg-paper-white dark:bg-dark-canvas text-carbon-ink dark:text-mist min-h-screen transition-colors duration-200">
+
+  <div class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Left Side: Brand Panel / Live Debugger (Always Dark) -->
+    <aside
+      class="w-full md:w-[340px] lg:w-[380px] xl:w-[410px] bg-obsidian text-white border-b md:border-b-0 md:border-r border-[#222222] p-6 lg:p-7 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto">
+
+      <!-- Top Section -->
+      <div class="flex flex-col">
+        <div class="font-bryant text-white text-[11px] tracking-bryant uppercase font-bold">
+          WinfoTest // Intent Engine
+        </div>
+
+        <h1 class="font-exposure text-3xl lg:text-[38px] leading-[1.12] text-white tracking-tight mt-6 mb-3">
+          Test intelligence, <span class="italic font-light">clarified. —</span>
+        </h1>
+
+        <p class="font-geist text-xs text-graphite leading-relaxed max-w-sm">
+          PostgreSQL-grounded enterprise AI assistant over WinfoTest test metadata and execution logs. Fully
+          intent-routed with strict schemas and zero hardcoded business fallbacks.
+        </p>
+
+        <div class="w-full h-[1px] bg-[#222222] my-5"></div>
+
+        <!-- Live Debug Trace Console -->
+        <div class="flex flex-col">
+          <span
+            class="font-bryant text-[10px] text-graphite tracking-bryant uppercase font-bold mb-2.5 flex justify-between items-center">
+            <span>Live Diagnostics</span>
+            <span class="text-[#27c93f] flex items-center gap-1.5 cyber-glow-green font-geist-mono tracking-wider text-[10px]">
+              <span class="w-1.5 h-1.5 bg-[#27c93f] rounded-full"></span>
+              <span>ONLINE</span>
+            </span>
+          </span>
+
+          <div
+            class="bg-[#050505] border border-[#222222] rounded-cards p-4 font-geist-mono text-[11px] text-[#888c89] leading-relaxed flex flex-col gap-2 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+            <div class="flex items-center justify-between">
+              <span>SYSTEM STATUS:</span>
+              <span class="flex items-center gap-1.5 text-white font-bold cyber-glow">
+                <span class="w-1.5 h-1.5 bg-ember-red rounded-full inline-block relative animate-radar-ping"></span>
+                ACTIVE
+              </span>
+            </div>
+            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
+              <span>AI ENGINE:</span>
+              <span class="text-white cyber-glow" id="diag-model">Local Qwen 2.5 + RAG</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
+              <span>SOURCE TRUTH:</span>
+              <span class="text-white cyber-glow">PostgreSQL DB</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
+              <span>SESSION ID:</span>
+              <span class="text-white select-all cyber-glow" id="diag-session">default</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
+              <span>LAST TOOL:</span>
+              <span class="text-[#27c93f] cyber-glow-green" id="diag-tool">none</span>
+            </div>
+            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
+              <span>MATCHED RECS:</span>
+              <span class="text-white font-bold cyber-glow" id="diag-recs">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Action Section -->
+      <div class="flex flex-col gap-3 mt-6 pb-2">
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="resetChat()"
+            class="w-full border border-white text-white rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:bg-white hover:text-obsidian transition-colors duration-200 cursor-pointer font-bold">
+            New Session
+          </button>
+          <button onclick="startIndexing()" id="index-btn"
+            class="w-full border border-graphite text-[#888c89] rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:border-white hover:text-white transition-colors duration-200 cursor-pointer font-bold bg-transparent">
+            Index Scripts
+          </button>
+        </div>
+        <div class="text-[10px] text-graphite font-geist-mono text-center">
+          WinfoTest Intelligence Engine v1.0.0
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Side: Chat Area -->
+    <main
+      class="flex-1 flex flex-col h-screen overflow-hidden bg-paper-white dark:bg-dark-canvas transition-colors duration-200">
+
+      <!-- Primary Navigation Header -->
+      <nav
+        class="h-16 border-b border-mist dark:border-slate px-8 flex items-center justify-between shrink-0 bg-white dark:bg-dark-canvas transition-colors duration-200">
+        <div class="flex items-center gap-2">
+          <span class="font-bryant text-slate dark:text-mist text-xs tracking-bryant uppercase font-bold">Active
+            Workspace</span>
+          <span
+            class="font-geist text-xs text-graphite dark:text-ash-border font-semibold bg-fog dark:bg-slate px-2.5 py-0.5 rounded-badges select-all">winfotest-ai</span>
+        </div>
+        <div class="flex items-center gap-6">
+          <span
+            class="hidden sm:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
+            Status: SQL Verified</span>
+
+          <!-- Theme Toggle Button -->
+          <button id="theme-toggle"
+            class="text-slate dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white transition-colors cursor-pointer p-1">
+            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                fill-rule="evenodd" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Chat Feed Scroll Container -->
+      <div id="chat-container" class="flex-1 overflow-y-auto px-8 md:px-12 py-10 flex flex-col gap-10">
+
+        <!-- Empty State Hero -->
+        <div id="empty-state"
+          class="max-w-3xl w-full mx-auto flex flex-col justify-center py-8 animate-fade-in text-left">
+
+          <h2
+            class="font-exposure text-3xl md:text-4xl text-carbon-ink dark:text-paper-white mb-4 max-w-xl transition-colors">
+            Explore test metadata —
+          </h2>
+
+          <p class="font-geist text-sm text-graphite dark:text-ash-border leading-relaxed mb-10 max-w-xl">
+            Query the vector store index or pull production data directly from PostgreSQL. Use the dynamic clustering
+            tool to organize scripts, generate regression suites, or explain workflows.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-2">
+
+            <button onclick="submitSuggested('Group scripts by process area')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Clustering</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Group scripts by process area
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Perform high-precision database token matching to classify all active test scripts.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Show supplier banking tests')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Semantic
+                Search</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Show supplier banking tests
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Search similar workflows via semantic embeddings retrieved from the Qdrant index.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Generate end-to-end regression test suite for Procure to Pay')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Suite Generation</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Generate E2E Suite for Procure to Pay
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Assemble multi-script regression workflows and detect business process coverage gaps.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Recommend locator fixes for failed scripts')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Self-Healing</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Recommend self-healing locator fixes
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Analyze fragile locators from execution failures and synthesize resilient selectors.
+              </p>
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- Chat Feed -->
+        <div id="chat-feed" class="flex flex-col gap-8 w-full max-w-3xl mx-auto hidden-state"></div>
+
+        <!-- Visible Querying Database Loading Indicator -->
+        <div id="loading-indicator"
+          class="hidden-state w-full max-w-3xl mx-auto flex items-center p-4 bg-white/90 dark:bg-dark-surface/90 border border-mist dark:border-slate rounded-cards shadow-md backdrop-blur-md animate-fade-in-up my-4 transition-all">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-ember-red opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-ember-red"></span>
+            </span>
+            <div>
+              <span id="loading-text" class="text-xs font-geist font-semibold text-carbon-ink dark:text-paper-white block">Querying PostgreSQL Database & Semantic Engine...</span>
+              <span class="text-[10px] font-geist-mono text-graphite dark:text-ash-border">Grounding test intelligence in live database telemetry</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Composer -->
+      <footer
+        class="p-6 border-t border-mist dark:border-slate bg-white dark:bg-dark-canvas shrink-0 transition-colors duration-200">
+        <form id="chat-form" class="max-w-3xl w-full mx-auto flex gap-4">
+          <div
+            class="flex-1 bg-fog dark:bg-dark-surface border border-ash-border dark:border-slate rounded-inputs px-4 py-3 flex items-center focus-within:border-carbon-ink dark:focus-within:border-mist transition-colors">
+            <textarea id="user-input" rows="1"
+              class="flex-1 text-base text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter outline-none bg-transparent font-geist font-normal resize-none overflow-hidden block w-full py-0 m-0 leading-[1.5]"
+              style="min-height: 24px; max-height: 180px;"
+              placeholder="Ask anything... (e.g. Group scripts by process area)" autocomplete="off"></textarea>
+          </div>
+          <button type="submit" id="send-btn"
+            class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center">
+            Send Query
+          </button>
+        </form>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <script>
+    // --- Theme Toggle Logic ---
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+    const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+    // Change the icons inside the button based on previous settings
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      themeToggleLightIcon.classList.remove('hidden');
+    } else {
+      themeToggleDarkIcon.classList.remove('hidden');
+    }
+
+    themeToggleBtn.addEventListener('click', function () {
+      // toggle icons inside button
+      themeToggleDarkIcon.classList.toggle('hidden');
+      themeToggleLightIcon.classList.toggle('hidden');
+
+      // if set via local storage previously
+      if (localStorage.getItem('theme')) {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        }
+        // if NOT set via local storage previously
+      } else {
+        if (document.documentElement.classList.contains('dark')) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      }
+    });
+    // --- End Theme Toggle Logic ---
+
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatFeed = document.getElementById('chat-feed');
+    const emptyState = document.getElementById('empty-state');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const sendBtn = document.getElementById('send-btn');
+    const chatContainer = document.getElementById('chat-container');
+
+    function submitSuggested(text) {
+      userInput.value = text;
+      chatForm.dispatchEvent(new Event('submit'));
+    }
+
+    const CHAT_STORAGE_KEY = 'winfotest_chat_history_v2';
+
+    function loadChatHistory() {
+      try {
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+        if (saved) {
+          const messages = JSON.parse(saved);
+          if (Array.isArray(messages) && messages.length > 0) {
+            emptyState.classList.add('hidden-state');
+            chatFeed.classList.remove('hidden-state');
+            messages.forEach(msg => {
+              if (msg && msg.role && msg.content) {
+                appendMessage(msg.role, msg.content, false);
+              }
+            });
+            setTimeout(() => {
+              chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 100);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not restore chat history from localStorage", e);
+      }
+    }
+
+    function saveMessageToStorage(role, content) {
+      try {
+        let history = [];
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+        if (saved) {
+          history = JSON.parse(saved);
+        }
+        history.push({ role, content });
+        if (history.length > 60) {
+          history = history.slice(-60);
+        }
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(history));
+      } catch (e) {
+        console.warn("Could not save message to localStorage", e);
+      }
+    }
+
+    function resetChat() {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+      chatFeed.innerHTML = '';
+      chatFeed.classList.add('hidden-state');
+      emptyState.classList.remove('hidden-state');
+      userInput.value = '';
+      loadingIndicator.classList.add('hidden-state');
+
+      // Reset diagnostics
+      document.getElementById('diag-tool').textContent = 'none';
+      document.getElementById('diag-recs').textContent = '0';
+
+      userInput.focus();
+    }
+
+    async function startIndexing() {
+      const indexBtn = document.getElementById('index-btn');
+      indexBtn.disabled = true;
+      const originalText = indexBtn.textContent;
+      indexBtn.textContent = 'Starting...';
+
+      try {
+        const response = await fetch("/api/v1/index", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ fast_mode: true })
+        });
+        const data = await response.json();
+
+        // Append a message to the assistant chat feed to notify the user
+        appendMessage('assistant', {
+          tool: 'index_all_scripts',
+          status: data.status,
+          message: data.message || "Semantic indexing started.",
+          reasoning: data.reasoning || "Initiated from admin dashboard."
+        });
+
+        // Immediately start polling
+        pollIndexingStatus();
+      } catch (err) {
+        appendMessage('assistant', {
+          status: 'internal_error',
+          message: "Failed to trigger indexing.",
+          reasoning: err.toString()
+        });
+        indexBtn.disabled = false;
+        indexBtn.textContent = 'Index Scripts';
+      }
+    }
+
+    let pollInterval = null;
+
+    function startPolling() {
+      if (!pollInterval) {
+        pollInterval = setInterval(pollIndexingStatus, 3000);
+      }
+    }
+
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    function updateProgressUI(processed, total, isIndexing) {
+      const notchTracks = document.querySelectorAll('.indexing-notches');
+      const progressLabels = document.querySelectorAll('.progress-label');
+      
+      const percentage = total > 0 ? Math.round((processed / total) * 100) : 0;
+      
+      progressLabels.forEach(label => {
+        label.textContent = `${percentage}% (${processed}/${total})`;
+      });
+
+      const totalNotches = 30;
+      const activeNotches = Math.round((percentage / 100) * totalNotches);
+
+      let html = '';
+      for (let i = 0; i < totalNotches; i++) {
+        const isActive = i < activeNotches;
+        const bgClass = isActive 
+          ? 'bg-[#27c93f] shadow-[0_0_8px_rgba(39,201,63,0.5)]' 
+          : 'bg-[#eeeeee] dark:bg-[#2c2c2c]';
+        html += `<div class="flex-1 h-2 rounded-sm transition-all duration-300 ${bgClass}"></div>`;
+      }
+
+      notchTracks.forEach(track => {
+        track.innerHTML = html;
+      });
+
+      if (!isIndexing && total > 0 && processed === total) {
+        stopPolling();
+      }
+    }
+
+    async function pollIndexingStatus() {
+      const indexBtn = document.getElementById('index-btn');
+
+      try {
+        const response = await fetch("/api/v1/index/status");
+        if (!response.ok) return;
+        const data = await response.json();
+
+        // Update any progress bar visual notches currently rendered on screen
+        updateProgressUI(data.processed_scripts, data.total_scripts, data.is_indexing);
+
+        if (data.is_indexing) {
+          indexBtn.disabled = true;
+          if (data.total_scripts > 0) {
+            indexBtn.textContent = `Indexing (${data.processed_scripts}/${data.total_scripts})...`;
+          } else {
+            indexBtn.textContent = 'Indexing...';
+          }
+        } else {
+          indexBtn.disabled = false;
+          indexBtn.textContent = 'Index Scripts';
+          stopPolling(); // Turn off when idle
+        }
+      } catch (err) {
+        console.error("Failed to poll status", err);
+        stopPolling();
+      }
+    }
+
+    fetch("/api/v1/index/status").then(r => r.json()).then(data => {
+      if (data.is_indexing) {
+        pollIndexingStatus();
+        startPolling();
+      }
+    }).catch(() => { });
+
+    function appendMessage(role, content, saveToStorage = true) {
+      emptyState.classList.add('hidden-state');
+      chatFeed.classList.remove('hidden-state');
+
+      if (saveToStorage) {
+        saveMessageToStorage(role, content);
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+      if (role === 'user') {
+        wrapper.innerHTML = `
+          <div class="max-w-[75%] bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink font-geist text-sm rounded-cards px-5 py-3.5 border border-[#222222] dark:border-transparent text-left leading-relaxed animate-fade-in-up">
+            ${escapeHtml(content)}
+          </div>
+        `;
+      } else {
+        let displayHtml = '';
+
+        if (typeof content === 'object' && content !== null) {
+          const tool = content.tool || 'unknown';
+          const totalMatched = content.total_scripts_matched || content.total_results || content.total_scripts || content.total_scripts_assessed || 0;
+
+          document.getElementById('diag-tool').textContent = tool;
+          document.getElementById('diag-recs').textContent = totalMatched;
+
+          if (content.status === 'ambiguous') {
+            const options = content.clarification_options || [];
+            const optionsHtml = options.map(opt =>
+              `<button onclick="submitSuggested('${escapeHtml(opt)}')" class="block w-full text-left px-4 py-2 mt-2 bg-fog dark:bg-slate hover:bg-mist dark:hover:bg-pewter transition-colors rounded-inputs text-xs font-geist font-semibold text-carbon-ink dark:text-mist border border-ash-border dark:border-transparent">${escapeHtml(opt)}</button>`
+            ).join('');
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-ember-red border-l-4 border-l-ember-red rounded-cards p-6 text-sm text-carbon-ink dark:text-mist font-geist">
+                <span class="font-bryant text-xs text-ember-red uppercase tracking-bryant block mb-2 font-bold">Ambiguous Query</span>
+                <p class="font-semibold mb-3 text-carbon-ink dark:text-paper-white">${escapeHtml(content.message || "Your query is too broad.")}</p>
+                <p class="text-graphite dark:text-ash-border text-xs mb-4 italic">Reasoning: ${escapeHtml(content.reasoning || "Confidence score below threshold.")}</p>
+                <div>
+                  <span class="font-bryant text-[10px] text-slate dark:text-pewter tracking-bryant block mb-2 uppercase font-bold">Clarification Options</span>
+                  ${optionsHtml}
+                </div>
+              </div>
+            `;
+          } else if (content.status === 'error' || content.status === 'not_found' || content.status === 'internal_error' || content.status === 'service_unavailable') {
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-ember-red border-l-4 border-l-ember-red rounded-cards p-6 text-sm text-carbon-ink dark:text-mist font-geist">
+                <span class="font-bryant text-xs text-ember-red uppercase tracking-bryant block mb-2 font-bold">Diagnostic Alert</span>
+                <p class="font-semibold mb-2 text-carbon-ink dark:text-paper-white">${escapeHtml(content.message || "Not working")}</p>
+                <p class="text-graphite dark:text-ash-border">${escapeHtml(content.reasoning || "An unexpected error occurred.")}</p>
+              </div>
+            `;
+          } else if (tool === 'generate_test_suite') {
+            const suiteName = content.suite_name || 'E2E Regression Suite';
+            const totalDuration = content.estimated_total_duration_mins || 0;
+            const steps = content.execution_steps || [];
+            const gaps = content.coverage_gaps || [];
+
+            let stepsHtml = '';
+            steps.forEach(step => {
+              stepsHtml += `
+                <div class="flex items-start gap-3 py-2.5 px-3 border border-mist dark:border-slate rounded bg-white dark:bg-dark-surface hover:shadow-sm transition-shadow text-xs font-geist">
+                  <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-2 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">Stage ${step.step_sequence}</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-bold text-carbon-ink dark:text-paper-white truncate">${escapeHtml(step.script_name)}</span>
+                      <span class="font-geist-mono text-[10px] text-graphite dark:text-pewter shrink-0">~${step.estimated_duration_mins}m</span>
+                    </div>
+                    <span class="font-geist-mono text-[10px] text-pewter dark:text-ash-border block mb-1">${escapeHtml(step.test_script_number)}</span>
+                    <p class="text-graphite dark:text-ash-border text-[11px] leading-relaxed">${escapeHtml(step.step_objective)}</p>
+                    <div class="flex items-center gap-1.5 mt-1.5 text-[9px]">
+                      ${step.module ? `<span class="bg-fog dark:bg-slate text-graphite dark:text-mist px-1.5 py-0.2 rounded font-semibold uppercase">${escapeHtml(step.module)}</span>` : ''}
+                      ${step.process_name ? `<span class="bg-fog dark:bg-slate text-graphite dark:text-mist px-1.5 py-0.2 rounded font-semibold uppercase">${escapeHtml(step.process_name)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+
+            let gapsHtml = '';
+            gaps.forEach(gap => {
+              gapsHtml += `
+                <div class="border border-mist dark:border-slate rounded p-2.5 bg-fog/30 dark:bg-dark-surface flex flex-col gap-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-carbon-ink dark:text-paper-white">${escapeHtml(gap.process_stage)}</span>
+                    <span class="font-geist-mono text-[10px] text-ember-red uppercase font-bold">${escapeHtml(gap.risk_level)} GAP</span>
+                  </div>
+                  <p class="text-graphite dark:text-ash-border text-[11px]">${escapeHtml(gap.missing_capability)}</p>
+                  <p class="text-[10px] text-slate dark:text-pewter italic mt-0.5">Recommendation: ${escapeHtml(gap.recommendation)}</p>
+                </div>
+              `;
+            });
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
+                  <div>
+                    <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block mb-1">E2E Regression Suite</span>
+                    <h3 class="font-geist text-base font-bold text-carbon-ink dark:text-paper-white">${escapeHtml(suiteName)}</h3>
+                    <span class="text-xs text-graphite dark:text-ash-border">~${totalDuration} mins runtime estimate (${steps.length} stages)</span>
+                  </div>
+                  <button onclick="submitSuggested('Execute the generated test suite')"
+                    class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-4 py-2 font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
+                    Execute Suite
+                  </button>
+                </div>
+
+                <div class="mt-4 mb-6">
+                  <span class="font-bryant text-[10px] text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold block mb-3">Sequential Test Stages (${steps.length})</span>
+                  <div class="border border-mist dark:border-slate rounded-cards p-3 bg-fog/20 dark:bg-dark-surface/30 max-h-80 overflow-y-auto space-y-2">
+                    ${stepsHtml || '<p class="py-3 text-graphite dark:text-pewter italic text-xs">No stages defined.</p>'}
+                  </div>
+                </div>
+
+                ${gaps.length > 0 ? `
+                  <div class="mt-6 pt-4 border-t border-mist dark:border-slate">
+                    <span class="font-bryant text-xs text-ember-red uppercase tracking-bryant font-bold block mb-2">Process Coverage Gaps</span>
+                    <div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                      ${gapsHtml}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          } else if (tool === 'recommend_locator_fixes') {
+            const scriptName = content.script_name || 'Target Script';
+            const repairs = content.locator_repairs || [];
+
+            let repairsHtml = '';
+            repairs.forEach(r => {
+              repairsHtml += `
+                <div class="border border-mist dark:border-slate rounded-cards p-4 mb-3 last:mb-0 bg-white dark:bg-dark-surface">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate text-graphite dark:text-mist px-2 py-0.5 rounded font-bold">Step ${r.step_no} (${escapeHtml(r.step_action)})</span>
+                    <span class="font-geist-mono text-[10px] text-graphite dark:text-ash-border">Resilience: ${r.resilience_score || 95}%</span>
+                  </div>
+
+                  <div class="text-xs mb-2">
+                    <span class="font-bryant text-[10px] text-ember-red uppercase tracking-bryant block font-bold mb-1">Fragile Locator</span>
+                    <div class="p-2 bg-fog dark:bg-[#151515] border border-mist dark:border-slate rounded font-geist-mono text-[11px] text-ember-red break-all">
+                      ${escapeHtml(r.broken_locator)}
+                    </div>
+                  </div>
+
+                  <div class="text-xs mb-2">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="font-bryant text-[10px] text-slate dark:text-pewter uppercase tracking-bryant block font-bold">Repaired Selector</span>
+                      <button onclick="copyToClipboard(this)" data-code="${escapeHtml(r.suggested_locator).replace(/"/g, '&quot;')}" class="font-geist text-[10px] text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white flex items-center gap-1 transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Copy
+                      </button>
+                    </div>
+                    <div class="p-2 bg-fog dark:bg-[#151515] border border-mist dark:border-slate rounded font-geist-mono text-[11px] text-carbon-ink dark:text-mist break-all font-semibold">
+                      ${escapeHtml(r.suggested_locator)}
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-graphite dark:text-ash-border italic mt-1">
+                    Rationale: ${escapeHtml(r.fix_rationale)}
+                  </p>
+                </div>
+              `;
+            });
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
+                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Self-Healing Locator Repair</span>
+                  <span class="font-bryant text-xs text-carbon-ink dark:text-paper-white uppercase tracking-bryant font-bold">${escapeHtml(scriptName)}</span>
+                </div>
+                <p class="text-xs text-graphite dark:text-ash-border mb-4">${escapeHtml(content.healing_summary || '')}</p>
+                <div class="max-h-80 overflow-y-auto pr-1 space-y-2">
+                  ${repairsHtml || '<p class="text-xs text-graphite italic">No locators requiring repair.</p>'}
+                </div>
+              </div>
+            `;
+          } else if (tool === 'assess_test_risk') {
+            const healthScore = content.overall_health_score || 85;
+            const riskItems = content.risk_items || [];
+
+            let itemsHtml = '';
+            riskItems.forEach(item => {
+              itemsHtml += `
+                <div class="py-2.5 border-b border-mist/60 dark:border-slate/60 last:border-b-0">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="font-geist-mono text-xs text-pewter dark:text-ash-border">${escapeHtml(item.test_script_number)}</span>
+                      <span class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white">${escapeHtml(item.script_name)}</span>
+                    </div>
+                    <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-mist">${item.risk_tier} (Score: ${item.risk_score}/100)</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-[11px] text-graphite dark:text-ash-border mt-1">
+                    <div>Executions: ${item.total_executions} (${item.failed_executions} failed)</div>
+                    <div>Flakiness Rate: ${(item.flakiness_rate * 100).toFixed(0)}%</div>
+                  </div>
+                  <p class="text-xs text-slate dark:text-pewter italic mt-1">${escapeHtml(item.stabilization_recommendation)}</p>
+                </div>
+              `;
+            });
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
+                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Predictive Risk Assessment</span>
+                  <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-paper-white">Overall Health: ${healthScore}/100</span>
+                </div>
+                <p class="text-xs text-graphite dark:text-ash-border mb-4">${escapeHtml(content.executive_summary || '')}</p>
+                <div class="max-h-80 overflow-y-auto pr-1">
+                  ${itemsHtml || '<p class="text-xs text-graphite italic">All scripts evaluated within normal thresholds.</p>'}
+                </div>
+              </div>
+            `;
+          } else if (tool === 'semantic_cluster_scripts') {
+            const concept = content.concept || 'general';
+            const reasoning = content.reasoning || '';
+            const clusters = content.clusters || {};
+
+            let clustersHtml = '';
+            for (const [category, scripts] of Object.entries(clusters)) {
+              let scriptsHtml = '';
+              scripts.forEach(script => {
+                const scriptNum = script.test_script_number || 'N/A';
+                const scriptName = script.script_name || 'Unknown';
+                const scriptDesc = script.description || script.objective || 'No description available';
+                const module = script.module || '';
+                const process = script.process || '';
+
+                let badgesHtml = '';
+                if (module) {
+                  badgesHtml += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold">${escapeHtml(module)}</span>`;
+                }
+                if (process) {
+                  badgesHtml += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold ml-1.5">${escapeHtml(process)}</span>`;
+                }
+
+                scriptsHtml += `
+                  <div class="py-3 border-b border-mist/50 dark:border-slate/50 last:border-b-0 text-left">
+                    <div class="flex items-start justify-between">
+                      <div class="flex items-center flex-wrap gap-2">
+                        <span class="font-geist-mono text-xs text-pewter dark:text-ash-border font-medium">${escapeHtml(scriptNum)}</span>
+                        <span class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white hover:text-ember-red dark:hover:text-ember-red cursor-pointer" onclick="submitSuggested('Explain script ${escapeHtml(scriptNum)}')">${escapeHtml(scriptName)}</span>
+                        ${badgesHtml}
+                      </div>
+                    </div>
+                    <p class="text-xs text-graphite dark:text-ash-border mt-1 max-w-2xl font-geist leading-relaxed">${escapeHtml(scriptDesc)}</p>
+                  </div>
+                `;
+              });
+
+              clustersHtml += `
+                <div class="mb-6 last:mb-0 text-left">
+                  <h4 class="font-bryant text-sm text-carbon-ink dark:text-paper-white tracking-bryant uppercase font-bold mb-1">${escapeHtml(category)}</h4>
+                  <div class="w-full h-[1px] bg-mist dark:bg-slate mb-2"></div>
+                  <div class="flex flex-col">
+                    ${scriptsHtml || '<p class="text-xs text-graphite dark:text-pewter italic">No scripts in this cluster.</p>'}
+                  </div>
+                </div>
+              `;
+            }
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-6">
+                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Dynamic Cluster: ${escapeHtml(concept)}</span>
+                  <span class="font-bryant text-xs text-carbon-ink dark:text-paper-white uppercase tracking-bryant font-bold">${content.total_scripts_matched} Matched</span>
+                </div>
+                <p class="text-xs text-graphite dark:text-ash-border italic mb-4">Reasoning: ${escapeHtml(reasoning)}</p>
+                <div class="max-h-96 overflow-y-auto pr-1">
+                  ${clustersHtml || '<p class="text-sm text-graphite dark:text-pewter">No clusters generated.</p>'}
+                </div>
+              </div>
+            `;
+          } else if (tool === 'semantic_search_tests') {
+            const query = content.query || '';
+            const results = content.results || [];
+            const reasoning = content.reasoning || '';
+
+            let resultsHtml = '';
+            results.forEach(res => {
+              const scriptNum = res.test_script_number || 'N/A';
+              const scriptName = res.script_name || 'Unknown';
+              const score = res.score ? `${(res.score * 100).toFixed(0)}% Match` : 'Match';
+              const dbRec = res.database_record || {};
+              const module = dbRec.module || '';
+              const process = dbRec.process || '';
+              const desc = dbRec.description || dbRec.script_description || dbRec.objective || '';
+              const steps = (dbRec.steps && Array.isArray(dbRec.steps)) ? dbRec.steps : [];
+
+              let badgesHtml = '';
+              if (module) {
+                badgesHtml += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold">${escapeHtml(module)}</span>`;
+              }
+              if (process) {
+                badgesHtml += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold ml-1.5">${escapeHtml(process)}</span>`;
+              }
+
+              let stepsAccordionHtml = '';
+              if (steps.length > 0) {
+                let stepsListHtml = '';
+                steps.forEach(step => {
+                  const sNo = step.step_no || step.step_sequence || '?';
+                  const sAction = step.step_action || step.action || '';
+                  const sDesc = step.step_description || step.description || '';
+                  const sParam = step.input_parameter || '';
+
+                  stepsListHtml += `
+                    <div class="flex items-start gap-2.5 py-1.5 border-b border-mist/40 dark:border-slate/40 last:border-b-0 text-xs font-geist">
+                      <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-1.5 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">#${sNo}</span>
+                      <div class="flex-1">
+                        <span class="font-semibold text-carbon-ink dark:text-paper-white">${escapeHtml(sAction)}:</span>
+                        <span class="text-graphite dark:text-ash-border ml-1">${escapeHtml(sDesc)}</span>
+                        ${sParam ? `<span class="inline-block font-geist-mono text-[10px] text-pewter dark:text-ash-border bg-fog dark:bg-[#151515] px-1.5 py-0.5 rounded ml-1.5">Param: ${escapeHtml(sParam)}</span>` : ''}
+                      </div>
+                    </div>
+                  `;
+                });
+
+                stepsAccordionHtml = `
+                  <details class="mt-3 bg-fog/40 dark:bg-dark-surface/60 border border-mist dark:border-slate rounded p-3 group">
+                    <summary class="cursor-pointer text-xs font-bold text-graphite dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white flex items-center justify-between transition-colors">
+                      <span class="flex items-center gap-1.5">View ${steps.length} Workflow Steps</span>
+                      <span class="font-geist-mono text-[10px] text-graphite dark:text-pewter">Click to expand</span>
+                    </summary>
+                    <div class="mt-3 pt-2 border-t border-mist dark:border-slate max-h-60 overflow-y-auto space-y-1">
+                      ${stepsListHtml}
+                    </div>
+                  </details>
+                `;
+              }
+
+              resultsHtml += `
+                <div class="py-5 border-b border-mist dark:border-slate last:border-b-0 text-left">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center flex-wrap gap-2">
+                      <span class="font-geist-mono text-xs text-pewter dark:text-ash-border font-medium">${escapeHtml(scriptNum)}</span>
+                      <span class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white hover:text-ember-red dark:hover:text-ember-red cursor-pointer" onclick="submitSuggested('Explain script ${escapeHtml(scriptNum)}')">${escapeHtml(scriptName)}</span>
+                      <span class="inline-block bg-[#eaf6f0] text-[#1e6f43] dark:bg-[#1a2f24] dark:text-[#4ade80] font-geist-mono text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold">${escapeHtml(score)}</span>
+                      ${badgesHtml}
+                    </div>
+                  </div>
+                  ${desc ? `<p class="text-xs text-graphite dark:text-ash-border mt-2 font-geist leading-relaxed">${escapeHtml(desc)}</p>` : ''}
+                  ${stepsAccordionHtml}
+                </div>
+              `;
+            });
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-6">
+                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Semantic Search: "${escapeHtml(query)}"</span>
+                  <span class="font-bryant text-xs text-carbon-ink dark:text-paper-white uppercase tracking-bryant font-bold">${content.total_results} Results</span>
+                </div>
+                <p class="text-xs text-graphite dark:text-ash-border italic mb-6">Reasoning: ${escapeHtml(reasoning)}</p>
+                <div class="flex flex-col">
+                  ${resultsHtml || '<p class="text-sm text-graphite dark:text-pewter">No matching scripts found.</p>'}
+                </div>
+              </div>
+            `;
+          } else if (tool === 'filtered_script_lookup' || (tool === 'analyze_entity' && !content.explanation)) {
+            const script = content.database_record || content;
+            const scriptNum = script.test_script_number || 'N/A';
+            const scriptName = script.script_name || 'Unknown';
+            const objective = script.objective || 'No objective specified';
+            const module = script.module || 'N/A';
+            const process = script.process || 'N/A';
+            const role = script.role || 'N/A';
+            const steps = script.steps || [];
+
+            let stepsListHtml = '';
+            if (steps.length > 0) {
+              steps.forEach(step => {
+                const sNo = step.step_no || step.step_sequence || '?';
+                const sAction = step.step_action || step.action || '';
+                const sDesc = step.step_description || step.description || '';
+                const sParam = step.input_parameter || '';
+
+                stepsListHtml += `
+                  <div class="flex items-start gap-3 py-2 border-b border-mist/50 dark:border-slate/50 last:border-b-0 text-xs font-geist hover:bg-fog/30 dark:hover:bg-dark-surface/40 px-2 rounded transition-colors">
+                    <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-2 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">Step ${sNo}</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span class="font-semibold text-carbon-ink dark:text-paper-white">${escapeHtml(sAction)}</span>
+                        ${sParam ? `<span class="font-geist-mono text-[10px] text-pewter dark:text-ash-border bg-fog dark:bg-[#151515] px-1.5 py-0.2 rounded border border-mist dark:border-[#222]">Param: ${escapeHtml(sParam)}</span>` : ''}
+                      </div>
+                      ${sDesc ? `<p class="text-graphite dark:text-ash-border mt-0.5 text-[11px] leading-relaxed">${escapeHtml(sDesc)}</p>` : ''}
+                    </div>
+                  </div>
+                `;
+              });
+            }
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant block mb-2 font-bold">Test Script Metadata</span>
+                <h3 class="font-geist text-lg font-bold text-carbon-ink dark:text-paper-white mb-1">${escapeHtml(scriptName)}</h3>
+                <span class="font-geist-mono text-xs text-pewter dark:text-ash-border block mb-4">${escapeHtml(scriptNum)}</span>
+                
+                <div class="grid grid-cols-3 gap-4 py-3 border-t border-b border-mist dark:border-slate my-4 text-xs">
+                  <div>
+                    <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1 font-bold">Module</span>
+                    <span class="font-semibold text-carbon-ink dark:text-mist">${escapeHtml(module)}</span>
+                  </div>
+                  <div>
+                    <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1 font-bold">Process</span>
+                    <span class="font-semibold text-carbon-ink dark:text-mist">${escapeHtml(process)}</span>
+                  </div>
+                  <div>
+                    <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1 font-bold">Assigned Role</span>
+                    <span class="font-semibold text-carbon-ink dark:text-mist">${escapeHtml(role)}</span>
+                  </div>
+                </div>
+
+                <div class="text-xs mb-6">
+                  <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-2 font-bold">Business Objective & Semantic Analysis</span>
+                  <div class="text-graphite dark:text-ash-border leading-relaxed text-xs bg-fog/30 dark:bg-dark-surface/50 p-4 rounded-cards border border-mist dark:border-slate semantic-doc-container">
+                    ${content.semantic_document ? formatMarkdownToHtml(content.semantic_document) : escapeHtml(objective)}
+                  </div>
+                </div>
+
+                <div class="mt-6">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="font-bryant text-xs text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold">Workflow Sequence (${steps.length} Steps)</span>
+                    <span class="font-geist-mono text-[10px] text-graphite dark:text-pewter">Ordered Execution</span>
+                  </div>
+                  <div class="border border-mist dark:border-slate rounded-cards p-3 bg-fog/20 dark:bg-dark-surface/30 max-h-80 overflow-y-auto space-y-1">
+                    ${stepsListHtml || '<p class="py-4 text-graphite dark:text-pewter italic text-xs">No steps defined for this script.</p>'}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (tool === 'analyze_entity' && content.explanation) {
+            const explanation = content.explanation || '';
+            const suggestedFix = content.suggested_fix || '';
+            const confidence = content.confidence ? `${(content.confidence * 100).toFixed(0)}%` : 'N/A';
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-center mb-6">
+                  <span class="font-bryant text-xs text-ember-red uppercase tracking-bryant font-bold">Failure Analysis</span>
+                  <span class="font-geist-mono text-xs text-pewter dark:text-ash-border font-medium">Confidence: ${escapeHtml(confidence)}</span>
+                </div>
+                <div class="text-sm text-carbon-ink dark:text-paper-white mb-6 leading-relaxed">
+                  <span class="font-bryant text-[10px] text-slate dark:text-pewter tracking-bryant block mb-1 uppercase font-bold">Root Cause Explanation</span>
+                  ${escapeHtml(explanation)}
+                </div>
+                <div>
+                  <span class="font-bryant text-[10px] text-slate dark:text-pewter tracking-bryant block mb-2 uppercase font-bold">Suggested Resolution</span>
+                  
+                  <div class="rounded-lg overflow-hidden border border-mist dark:border-slate shadow-sm mt-3">
+                    <div class="bg-fog dark:bg-[#1a1a1a] px-4 py-2.5 flex justify-between items-center border-b border-mist dark:border-[#2a2a2a]">
+                      <div class="flex gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56] shadow-sm"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] shadow-sm"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-[#27c93f] shadow-sm"></div>
+                      </div>
+                      <div class="font-geist-mono text-[10px] text-graphite dark:text-pewter font-medium">solution.snippet</div>
+                      <button onclick="copyToClipboard(this)" data-code="${escapeHtml(suggestedFix).replace(/"/g, '&quot;')}" class="font-geist text-[10px] text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white flex items-center gap-1.5 transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Copy Code
+                      </button>
+                    </div>
+                    <div class="p-4 bg-[#f8f9fa] dark:bg-[#0d0d0d] overflow-x-auto">
+                      <pre class="font-geist-mono text-[13px] text-[#24292e] dark:text-[#d1d5db] whitespace-pre-wrap">${escapeHtml(suggestedFix)}</pre>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            `;
+          } else if (tool === 'execute_script_set') {
+            const execId = content.execution_id || 'N/A';
+            const status = content.status || 'unknown';
+            const scriptIds = content.test_script_ids || [];
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant block mb-2 font-bold">Test Orchestration Exec</span>
+                <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+                  <h3 class="font-geist text-base font-bold text-carbon-ink dark:text-paper-white">Execution Request Dispatched</h3>
+                  <span class="inline-flex items-center gap-1.5 bg-[#eaf6f0] text-[#1e6f43] dark:bg-[#1a2f24] dark:text-[#4ade80] font-geist text-xs px-2.5 py-1 rounded-badges uppercase font-bold"><span class="w-1.5 h-1.5 bg-[#1e6f43] dark:bg-[#4ade80] rounded-full"></span>${escapeHtml(status)}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 py-3 border-t border-b border-mist dark:border-slate text-xs mb-4">
+                  <div>
+                    <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1 font-bold">Execution ID</span>
+                    <span class="font-geist-mono text-pewter dark:text-ash-border font-semibold select-all">${escapeHtml(execId)}</span>
+                  </div>
+                  <div>
+                    <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1 font-bold">Target Scripts Count</span>
+                    <span class="font-semibold text-carbon-ink dark:text-mist">${scriptIds.length} scripts</span>
+                  </div>
+                </div>
+                <p class="text-[11px] text-graphite dark:text-ash-border leading-relaxed">
+                  Execution client invoked dynamically. Integration with production execution pipelines will process these scripts sequentially.
+                </p>
+              </div>
+            `;
+          } else if (tool === 'index_all_scripts') {
+            if (typeof startPolling === 'function') {
+              startPolling();
+              pollIndexingStatus();
+            }
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant block mb-2 font-bold">Semantic Search Indexer</span>
+                <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+                  <h3 class="font-geist text-base font-bold text-carbon-ink dark:text-paper-white">Background Indexing Dispatched</h3>
+                  <span class="status-badge inline-flex items-center gap-1.5 bg-[#eaf6f0] text-[#1e6f43] dark:bg-[#1a2f24] dark:text-[#4ade80] font-geist text-xs px-2.5 py-1 rounded-badges uppercase font-bold"><span class="w-1.5 h-1.5 bg-[#1e6f43] dark:bg-[#4ade80] rounded-full animate-pulse"></span>INDEXING</span>
+                </div>
+                <p class="text-xs text-graphite dark:text-ash-border mb-4">${escapeHtml(content.message)}</p>
+                <div class="w-full bg-fog dark:bg-[#111] border border-ash-border dark:border-[#2a2a2a] rounded-cards p-4 mb-4 shadow-inner">
+                  <div class="flex justify-between items-center text-[10px] font-geist-mono text-slate dark:text-ash-border mb-2 font-semibold tracking-wider">
+                    <span>LINEAR NOTCH INDEX GAUGE</span>
+                    <span class="progress-label font-bold text-[#27c93f] cyber-glow-green">0% (0/0)</span>
+                  </div>
+                  <div class="indexing-notches flex gap-1 h-3 items-center justify-between bg-transparent"></div>
+                </div>
+                <p class="text-[11px] text-graphite dark:text-pewter leading-relaxed italic">
+                  Generating high-quality semantic documents and cosine vector embeddings using local model and writing to PostgreSQL & Qdrant indices...
+                </p>
+              </div>
+            `;
+          } else if (tool === 'generate_script_steps') {
+            const scenario = content.scenario || '';
+            const processArea = content.process_area || '';
+            const steps = content.generated_steps || [];
+            const sourceScripts = content.few_shot_source_scripts || [];
+            const reasoning = content.reasoning || '';
+
+            // Map action types to colour classes
+            const actionColours = {
+              'Navigate':                  'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+              'Click Button':              'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+              'Enter Value - Text Field':  'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+              'Select Option':             'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+              'Open Dropdown':             'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+              'Wait Till Load':            'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+              'Vertical Scroll':           'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300',
+              'Key - Tab':                 'bg-pink-50 text-pink-600 dark:bg-pink-900/30 dark:text-pink-300',
+              'Click':                     'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300',
+              'Verify':                    'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+            };
+
+            let stepsHtml = '';
+            steps.forEach(step => {
+              const no      = step.step_no || '?';
+              const action  = step.action || 'Navigate';
+              const desc    = step.step_description || '';
+              const target  = step.target_element || '';
+              const param   = step.input_parameter || '';
+              const colour  = actionColours[action] || 'bg-fog text-graphite dark:bg-slate dark:text-mist';
+
+              const paramBadge = param
+                ? `<span class="inline-block font-geist-mono text-[10px] bg-[#fff7ed] text-[#c2410c] dark:bg-[#431407] dark:text-[#fb923c] px-2 py-0.5 rounded-badges border border-orange-200 dark:border-orange-900 ml-1.5 select-all">${escapeHtml(param)}</span>`
+                : '';
+
+              stepsHtml += `
+                <div class="flex items-start gap-3 py-3 border-b border-mist/50 dark:border-slate/50 last:border-b-0 text-xs font-geist">
+                  <span class="font-geist-mono text-[10px] bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink px-2 py-0.5 rounded font-bold shrink-0 min-w-[3rem] text-center">Step ${no}</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                      <span class="font-geist-mono text-[10px] px-2 py-0.5 rounded-badges font-bold ${colour}">${escapeHtml(action)}</span>
+                      ${target ? `<span class="font-geist-mono text-[10px] text-graphite dark:text-ash-border">'${escapeHtml(target)}'</span>` : ''}
+                      ${paramBadge}
+                    </div>
+                    ${desc ? `<p class="text-graphite dark:text-ash-border leading-relaxed text-[11px]">${escapeHtml(desc)}</p>` : ''}
+                  </div>
+                </div>
+              `;
+            });
+
+            // Source scripts badges
+            let sourceBadges = '';
+            sourceScripts.forEach(s => {
+              sourceBadges += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist-mono text-[10px] px-2 py-0.5 rounded-badges mr-1.5">${escapeHtml(s)}</span>`;
+            });
+
+            // Export JSON button
+            const exportPayload = JSON.stringify(steps, null, 2);
+            const escapedExport = escapeHtml(exportPayload).replace(/"/g, '&quot;');
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <div class="flex justify-between items-start mb-4 pb-4 border-b border-mist dark:border-slate">
+                  <div>
+                    <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block mb-1">AI-Generated Test Steps</span>
+                    <h3 class="font-geist text-base font-bold text-carbon-ink dark:text-paper-white">${escapeHtml(scenario)}</h3>
+                    ${processArea ? `<span class="font-geist text-xs text-graphite dark:text-ash-border">${escapeHtml(processArea)}</span>` : ''}
+                  </div>
+                  <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-mist bg-fog dark:bg-slate px-3 py-1.5 rounded-badges shrink-0">${steps.length} Steps</span>
+                </div>
+
+                <p class="text-[11px] text-graphite dark:text-ash-border italic mb-4">${escapeHtml(reasoning)}</p>
+
+                ${sourceScripts.length > 0 ? `
+                  <div class="mb-4">
+                    <span class="font-bryant text-[10px] text-slate dark:text-pewter uppercase tracking-bryant font-bold block mb-1.5">Few-Shot Sources</span>
+                    <div class="flex flex-wrap gap-1">${sourceBadges}</div>
+                  </div>
+                ` : ''}
+
+                <div class="mb-2">
+                  <span class="font-bryant text-[10px] text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold block mb-2">Automation Step Sequence</span>
+                  <div class="border border-mist dark:border-slate rounded-cards p-3 bg-fog/20 dark:bg-dark-surface/30 max-h-80 overflow-y-auto space-y-0">
+                    ${stepsHtml || '<p class="py-4 text-graphite dark:text-pewter italic text-xs text-center">No steps generated.</p>'}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 mt-5 pt-4 border-t border-mist dark:border-slate">
+                  <button onclick="copyToClipboard(this)" data-code="${escapedExport}"
+                    class="inline-flex items-center gap-1.5 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-4 py-2 font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Export Execution JSON
+                  </button>
+                  <span class="text-[10px] text-graphite dark:text-pewter font-geist">Steps use <span class="font-geist-mono text-carbon-ink dark:text-mist">{{Variable}}</span> placeholders — no real test data embedded.</span>
+                </div>
+              </div>
+            `;
+          } else {
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+                <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant block mb-4 font-bold">${escapeHtml(tool)}</span>
+                <pre class="font-geist-mono text-xs p-4 bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs overflow-x-auto text-[#24292e] dark:text-[#d1d5db] whitespace-pre">${escapeHtml(JSON.stringify(content, null, 2))}</pre>
+              </div>
+            `;
+          }
+        } else {
+          displayHtml = `
+            <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
+              <p class="text-sm text-carbon-ink dark:text-paper-white leading-relaxed">${escapeHtml(String(content))}</p>
+            </div>
+          `;
+        }
+
+        wrapper.innerHTML = `
+          <div class="w-full animate-fade-in-up">
+            ${displayHtml}
+          </div>
+        `;
+      }
+
+      chatFeed.appendChild(wrapper);
+      chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function formatMarkdownToHtml(text) {
+      if (!text) return '';
+      let cleanText = text.replace(/^```markdown\s*/gm, '').replace(/^```\s*/gm, '');
+      let html = escapeHtml(cleanText);
+
+      html = html.replace(/^### (.*?)$/gm, '<strong class="block mt-5 mb-1 text-carbon-ink dark:text-paper-white font-bryant tracking-bryant uppercase text-[10px]">$1</strong>');
+      html = html.replace(/^## (.*?)$/gm, '<strong class="block mt-5 mb-1 text-carbon-ink dark:text-paper-white font-bryant tracking-bryant uppercase text-[11px]">$1</strong>');
+      html = html.replace(/^# (.*?)$/gm, '<strong class="block mt-5 mb-2 text-carbon-ink dark:text-paper-white font-bryant tracking-bryant uppercase text-xs">$1</strong>');
+
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-carbon-ink dark:text-paper-white">$1</strong>');
+      html = html.replace(/^- (.*?)$/gm, '<div class="ml-2 flex items-start gap-2 text-carbon-ink dark:text-mist"><span class="text-[10px] text-graphite dark:text-ash-border mt-0.5">•</span> <span>$1</span></div>');
+      html = html.replace(/^• (.*?)$/gm, '<div class="ml-2 flex items-start gap-2 text-carbon-ink dark:text-mist"><span class="text-[10px] text-graphite dark:text-ash-border mt-0.5">•</span> <span>$1</span></div>');
+
+      html = html.replace(/\n/g, '<br/>');
+      return html;
+    }
+
+    function autoResizeInput() {
+      userInput.style.height = 'auto';
+      const newHeight = Math.min(userInput.scrollHeight, 180);
+      userInput.style.height = newHeight + 'px';
+      if (newHeight >= 180) {
+        userInput.style.overflowY = 'auto';
+      } else {
+        userInput.style.overflowY = 'hidden';
+      }
+    }
+
+    userInput.addEventListener('input', autoResizeInput);
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+    });
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage('user', message, true);
+      userInput.value = '';
+      autoResizeInput();
+      sendBtn.disabled = true;
+
+      // Show the visible querying database indicator banner
+      loadingIndicator.classList.remove('hidden-state');
+      chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+
+      try {
+        const response = await fetch("/api/v1/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        if (!response.ok) {
+          loadingIndicator.classList.add('hidden-state');
+          appendMessage('assistant', "Not working (Server returned error)", true);
+          sendBtn.disabled = false;
+          userInput.focus();
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        let streamingWrapper = null;
+        let textBubble = null;
+        let streamingText = '';
+        let hasTextResponse = false;
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process SSE lines
+          let lines = buffer.split('\n');
+          buffer = lines.pop(); // keep the last incomplete line in the buffer
+          
+          for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                
+                if (data.type === 'token') {
+                  // Only create container once actual token text arrives!
+                  if (!streamingWrapper) {
+                    loadingIndicator.classList.add('hidden-state');
+                    streamingWrapper = document.createElement('div');
+                    streamingWrapper.className = 'flex w-full justify-start';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'w-full animate-fade-in-up';
+                    
+                    textBubble = document.createElement('div');
+                    textBubble.className = 'w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-6 mb-4 font-geist text-left transition-colors text-sm text-carbon-ink dark:text-paper-white leading-relaxed';
+                    
+                    contentDiv.appendChild(textBubble);
+                    streamingWrapper.appendChild(contentDiv);
+                    chatFeed.appendChild(streamingWrapper);
+                  }
+
+                  hasTextResponse = true;
+                  streamingText += data.content;
+                  textBubble.innerHTML = formatMarkdownToHtml(streamingText);
+                  chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+
+                } else if (data.type === 'done') {
+                  loadingIndicator.classList.add('hidden-state');
+
+                  if (hasTextResponse && streamingText) {
+                    saveMessageToStorage('assistant', streamingText);
+                  }
+                  
+                  // Render the UI cards
+                  if (data.results && Array.isArray(data.results)) {
+                    for (const result of data.results) {
+                      appendMessage('assistant', result, true);
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error("Failed to parse SSE JSON:", e, line);
+              }
+            }
+          }
+        }
+
+      } catch (error) {
+        loadingIndicator.classList.add('hidden-state');
+        appendMessage('assistant', "Not working (Network or connection failure)", true);
+      } finally {
+        loadingIndicator.classList.add('hidden-state');
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
+    });
+
+    window.copyToClipboard = function (button) {
+      const code = button.getAttribute('data-code');
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = code;
+      const decodedCode = textarea.value;
+
+      navigator.clipboard.writeText(decodedCode).then(() => {
+        const originalHtml = button.innerHTML;
+        button.innerHTML = `<svg class="w-3.5 h-3.5 text-[#27c93f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="text-[#27c93f]">Copied!</span>`;
+
+        setTimeout(() => {
+          button.innerHTML = originalHtml;
+        }, 2000);
+      });
+    };
+
+    // Restore persistent chat history on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadChatHistory();
+    });
+  </script>
+</body>
+
+</html>
