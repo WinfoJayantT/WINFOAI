@@ -53,6 +53,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = "default"
+    test_data: Optional[Dict[str, Any]] = None
+
+
+class ExportCsvRequest(BaseModel):
+    steps: list[Dict[str, Any]]
 
 
 @app.get("/")
@@ -75,8 +80,22 @@ async def chat(request: ChatRequest) -> Dict[str, Any]:
 @app.post("/api/v1/chat/stream")
 async def chat_stream(request: ChatRequest):
     return StreamingResponse(
-        tool_registry_service.stream_chat(request.message, session_id=request.session_id),
+        tool_registry_service.stream_chat(
+            request.message, session_id=request.session_id, test_data=request.test_data
+        ),
         media_type="text/event-stream"
+    )
+
+
+@app.post("/api/v1/export/steps-csv")
+async def export_steps_csv(req: ExportCsvRequest):
+    from app.services.step_generation_service import step_generation_service
+    from fastapi.responses import Response
+    csv_str = step_generation_service.export_steps_to_csv(req.steps)
+    return Response(
+        content=csv_str,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=winfotest_steps.csv"}
     )
 
 class IndexRequest(BaseModel):

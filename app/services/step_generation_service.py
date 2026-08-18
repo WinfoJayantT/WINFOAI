@@ -86,16 +86,18 @@ class StepGenerationService:
         self,
         scenario: str,
         process_area: str = "",
+        test_data: Optional[Dict[str, Any]] = None,
         limit: int = 3,
     ) -> Dict[str, Any]:
         """
         Dynamically generates WinfoTest steps for *scenario* using vector few-shot
-        RAG grounded in PostgreSQL master_steps.
+        RAG grounded in PostgreSQL master_steps, with optional test_data variable binding.
         """
         logger.info(
-            "Generating steps dynamically | scenario='%s' process_area='%s'",
+            "Generating steps dynamically | scenario='%s' process_area='%s' test_data_keys=%s",
             scenario,
             process_area,
+            list(test_data.keys()) if test_data else [],
         )
 
         # 1. Pull dynamic few-shot examples from the database via Qdrant Vector Search
@@ -103,8 +105,8 @@ class StepGenerationService:
             scenario, process_area, limit=limit
         )
 
-        # 2. Build the grounded user prompt
-        user_prompt = self._build_user_prompt(scenario, process_area, examples)
+        # 2. Build the grounded user prompt with test data if provided
+        user_prompt = self._build_user_prompt(scenario, process_area, examples, test_data=test_data)
 
         # 3. Call the fast local LLM with greedy decoding (temperature=0.0)
         try:
@@ -130,8 +132,9 @@ class StepGenerationService:
                 "reasoning": f"LLM generation failed: {exc}",
             }
 
-        # 4. Parse and validate the dynamically generated steps
-        steps = self._parse_steps(raw)
+        # 4. Parse, enrich, and validate the dynamically generated steps
+        steps = self._parse_steps(raw, test_data=test_data)
+        csv_content = self.export_steps_to_csv(steps)
 
         reasoning = (
             f"Dynamically generated {len(steps)} automation steps for '{scenario}' "
@@ -148,8 +151,42 @@ class StepGenerationService:
             "generated_steps": steps,
             "few_shot_source_scripts": source_ids,
             "total_steps": len(steps),
+            "csv_export": csv_content,
             "reasoning": reasoning,
         }
+
+    def export_steps_to_csv(self, steps: List[Dict[str, Any]]) -> str:
+        """
+        Exports generated steps to 100% WinfoTest-compliant CSV format.
+        """
+        import csv
+        import io
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow([
+            "step_no",
+            "action",
+            "step_description",
+            "input_parameter",
+            "input_type",
+            "locator_code",
+            "default_value",
+            "wait_ms",
+            "is_mandatory"
+        ])
+        for s in steps:
+            writer.writerow([
+                s.get("step_no", 1),
+                s.get("action", "Navigate"),
+                s.get("step_description", ""),
+                s.get("input_parameter", ""),
+                s.get("input_type", "Other"),
+                s.get("locator_code", ""),
+                s.get("default_value", ""),
+                s.get("wait_ms", 0),
+                "true" if s.get("is_mandatory", True) else "false"
+            ])
+        return output.getvalue()
 
     # ──────────────────────────────────────────────────────────────────────────
     # Few-shot retrieval — Qdrant Vector Search + PostgreSQL Grounding
@@ -260,6 +297,7 @@ class StepGenerationService:
         scenario: str,
         process_area: str,
         examples: List[Dict],
+        test_data: Optional[Dict[str, Any]] = None,
     ) -> str:
         parts: List[str] = []
 
@@ -274,6 +312,13 @@ class StepGenerationService:
                     parts.append(f"- {act} | {desc} {f'| {param}' if param else ''}")
             parts.append("=== END REFERENCE ===\n")
 
+        if test_data and isinstance(test_data, dict) and len(test_data) > 0:
+            parts.append("=== USER-SUPPLIED TEST DATA DATASET ===")
+            parts.append("Bind the following test data variables into your steps using {{Variable_Name}}:")
+            for k, v in test_data.items():
+                parts.append(f"- {k}: {v}")
+            parts.append("=== END TEST DATA ===\n")
+
         if process_area:
             parts.append(f"Process Area: {process_area}")
         parts.append(f"Scenario to Automate: {scenario}")
@@ -284,13 +329,23 @@ class StepGenerationService:
     # ──────────────────────────────────────────────────────────────────────────
     # Response parsing & validation
     # ──────────────────────────────────────────────────────────────────────────
-    def _parse_steps(self, raw: str) -> List[Dict[str, Any]]:
+    def _parse_steps(
+        self, raw: str, test_data: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """
         Parses pipe-delimited lines (or fallback JSON) into structured step objects.
-        Validates actions against VALID_ACTIONS and assigns sequential step numbers.
+        Enriches actions with input_type, locator_code, default_value, and assigns sequential step numbers.
         """
         clean = raw.strip()
         parsed_steps: List[Dict[str, Any]] = []
+
+        # Normalization lookup for test_data keys
+        data_lookup = {}
+        if test_data and isinstance(test_data, dict):
+            for k, v in test_data.items():
+                data_lookup[k.lower().strip()] = str(v)
+                data_lookup[k.lower().strip().replace(" ", "_")] = str(v)
+                data_lookup[k.lower().strip().replace("_", "")] = str(v)
 
         # 1. Parse pipe-delimited lines
         lines = [line.strip() for line in clean.splitlines() if line.strip() and not line.strip().startswith("#")]
@@ -309,10 +364,17 @@ class StepGenerationService:
                     desc = parts[2] if len(parts) > 2 else f"{action_raw}: {target}"
                     param = parts[3] if len(parts) > 3 else ""
 
+                    # Clean parameter notation
+                    param_clean = param.strip()
+                    if param_clean and not param_clean.startswith("{{") and not param_clean.endswith("}}"):
+                        # If simple text variable, wrap nicely
+                        if re.match(r"^[a-zA-Z0-9_]+$", param_clean):
+                            param_clean = f"{{{{{param_clean}}}}}"
+
                     # Match action against valid set
                     matched_action = "Navigate"
                     for va in VALID_ACTIONS:
-                        if va.lower() == action_raw.lower():
+                        if va.lower() == action_raw.lower() or va.lower() in action_raw.lower():
                             matched_action = va
                             break
 
@@ -320,7 +382,7 @@ class StepGenerationService:
                         "action": matched_action,
                         "target_element": target,
                         "step_description": desc,
-                        "input_parameter": param,
+                        "input_parameter": param_clean,
                     })
 
         # 2. Fallback: Parse JSON if the LLM returned JSON format
@@ -336,24 +398,67 @@ class StepGenerationService:
                         if isinstance(item, dict):
                             act = item.get("action", "Navigate")
                             matched_action = act if act in VALID_ACTIONS else "Navigate"
+                            p_val = str(item.get("input_parameter", "")).strip()
+                            if p_val and not p_val.startswith("{{") and re.match(r"^[a-zA-Z0-9_]+$", p_val):
+                                p_val = f"{{{{{p_val}}}}}"
                             parsed_steps.append({
                                 "action": matched_action,
                                 "target_element": str(item.get("target_element", "")),
                                 "step_description": str(item.get("step_description", "")),
-                                "input_parameter": str(item.get("input_parameter", "")),
+                                "input_parameter": p_val,
                             })
             except Exception:
                 pass
 
-        # 3. Assign sequential step numbers 1..N
+        # 3. Assign sequential step numbers and infer Playwright locator_code & input_type
         final_steps: List[Dict[str, Any]] = []
         for i, st in enumerate(parsed_steps, start=1):
+            act = st["action"]
+            target = st["target_element"]
+            param = st["input_parameter"]
+            desc = st["step_description"]
+
+            # Infer input_type
+            if "Text Field" in act or "Enter" in act or "Type" in act:
+                input_type = "Textbox"
+                locator_code = f'page.get_by_role("textbox", name="{target}", exact=True).fill("{{value}}")'
+            elif "Button" in act or "Click Button" in act:
+                input_type = "Button"
+                locator_code = f'page.get_by_role("button", name="{target}", exact=True).click()'
+            elif "Navigate" in act or "Click" in act:
+                input_type = "Navigate"
+                locator_code = f'page.get_by_title("{target}", exact=True).click()'
+            elif "Option" in act or "Dropdown" in act or "Select" in act:
+                input_type = "Dropdown"
+                locator_code = f'page.get_by_text("{target}", exact=True).click()'
+            elif "Verify" in act:
+                input_type = "Validation"
+                locator_code = f'expect(page.get_by_text("{target}")).to_be_visible()'
+            else:
+                input_type = "Other"
+                locator_code = f'page.locator("{target}").click()'
+
+            # Match default value from test_data if available
+            default_val = ""
+            if param:
+                # Strip {{ and }}
+                raw_param_name = re.sub(r"[{}\s]", "", param).lower()
+                if raw_param_name in data_lookup:
+                    default_val = data_lookup[raw_param_name]
+                elif raw_param_name.replace("_", "") in data_lookup:
+                    default_val = data_lookup[raw_param_name.replace("_", "")]
+
             final_steps.append({
                 "step_no": i,
-                "action": st["action"],
-                "step_description": st["step_description"],
-                "target_element": st["target_element"],
-                "input_parameter": st["input_parameter"],
+                "action": act,
+                "step_description": desc,
+                "target_element": target,
+                "input_parameter": param,
+                "input_type": input_type,
+                "locator_code": locator_code,
+                "default_value": default_val,
+                "wait_ms": 0,
+                "is_mandatory": True,
             })
 
         return final_steps

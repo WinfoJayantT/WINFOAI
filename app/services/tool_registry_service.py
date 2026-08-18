@@ -24,7 +24,9 @@ from app.clients.llm_client import llm_client
 import json
 
 class ToolRegistryService:
-    async def stream_chat(self, user_query: str, session_id: str = "default"):
+    async def stream_chat(
+        self, user_query: str, session_id: str = "default", test_data: Optional[Dict[str, Any]] = None
+    ) -> Generator[str, None, None]:
         start_time = time.time()
         logger.info(f"Streaming chat query: '{user_query}' for session: {session_id}")
 
@@ -44,8 +46,12 @@ class ToolRegistryService:
                     ambiguous_intents.append(intent_res)
                     continue
                     
+                args_to_pass = dict(intent_res.arguments)
+                if test_data:
+                    args_to_pass["test_data"] = test_data
+
                 res = self.execute_tool(
-                    intent_res.tool, intent_res.arguments, session_id=session_id
+                    intent_res.tool, args_to_pass, session_id=session_id
                 )
                 if isinstance(res, dict):
                     res.setdefault("tool", intent_res.tool)
@@ -252,9 +258,9 @@ class ToolRegistryService:
             elif tool_name == "generate_script_steps":
                 scenario = arguments.get("scenario") or arguments.get("description") or arguments.get("query", "")
                 process_area = arguments.get("process_area") or arguments.get("process") or ""
+                test_data = arguments.get("test_data")
                 return step_generation_service.generate_steps(
-                    scenario=scenario,
-                    process_area=process_area,
+                    scenario=scenario, process_area=process_area, test_data=test_data
                 )
 
             else:

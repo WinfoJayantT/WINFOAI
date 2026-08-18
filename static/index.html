@@ -409,18 +409,43 @@
       <!-- Input Composer -->
       <footer
         class="p-6 border-t border-mist dark:border-slate bg-white dark:bg-dark-canvas shrink-0 transition-colors duration-200">
-        <form id="chat-form" class="max-w-3xl w-full mx-auto flex gap-4">
-          <div
-            class="flex-1 bg-fog dark:bg-dark-surface border border-ash-border dark:border-slate rounded-inputs px-4 py-3 flex items-center focus-within:border-carbon-ink dark:focus-within:border-mist transition-colors">
-            <textarea id="user-input" rows="1"
-              class="flex-1 text-base text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter outline-none bg-transparent font-geist font-normal resize-none overflow-hidden block w-full py-0 m-0 leading-[1.5]"
-              style="min-height: 24px; max-height: 180px;"
-              placeholder="Ask anything... (e.g. Group scripts by process area)" autocomplete="off"></textarea>
+        <form id="chat-form" class="max-w-3xl w-full mx-auto flex flex-col gap-2">
+          
+          <!-- Test Data Attachment Drawer -->
+          <div id="test-data-drawer" class="hidden-state p-3 bg-fog dark:bg-dark-surface border border-mist dark:border-slate rounded-cards text-xs animate-fade-in-up">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="font-bryant text-[10px] text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold">Attach Scenario Test Data (JSON / Variables)</span>
+              <button type="button" onclick="toggleTestDataDrawer()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xs font-bold">&times; Close</button>
+            </div>
+            <textarea id="test-data-input" rows="2"
+              class="w-full bg-white dark:bg-[#151515] border border-ash-border dark:border-[#333] rounded-inputs p-2 text-xs font-geist-mono text-carbon-ink dark:text-paper-white outline-none resize-none"
+              placeholder='{"Supplier_Name": "Oracle America Inc", "Invoice_Number": "INV-2025-001", "Invoice_Amount": "15000.00"}'></textarea>
+            <div class="flex justify-between items-center mt-2 text-[10px] text-graphite dark:text-pewter font-geist">
+              <span>Variables will be bound into <span class="font-geist-mono text-carbon-ink dark:text-mist">{{Variable}}</span> placeholders & default values.</span>
+              <div class="flex items-center gap-2">
+                <input type="file" id="test-data-file-input" accept=".json,.csv" class="hidden" onchange="handleTestDataFileUpload(this)">
+                <button type="button" onclick="document.getElementById('test-data-file-input').click()" class="text-carbon-ink dark:text-mist font-semibold hover:underline cursor-pointer">Upload .json/.csv</button>
+              </div>
+            </div>
           </div>
-          <button type="submit" id="send-btn"
-            class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center">
-            Send Query
-          </button>
+
+          <div class="flex gap-3 items-end">
+            <div
+              class="flex-1 bg-fog dark:bg-dark-surface border border-ash-border dark:border-slate rounded-inputs px-4 py-3 flex items-center gap-2 focus-within:border-carbon-ink dark:focus-within:border-mist transition-colors">
+              <textarea id="user-input" rows="1"
+                class="flex-1 text-base text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter outline-none bg-transparent font-geist font-normal resize-none overflow-hidden block w-full py-0 m-0 leading-[1.5]"
+                style="min-height: 24px; max-height: 180px;"
+                placeholder="Ask anything... (e.g. Generate automation steps for AP invoice)" autocomplete="off"></textarea>
+              <button type="button" onclick="toggleTestDataDrawer()" id="test-data-btn" title="Attach Test Data"
+                class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1 rounded transition-colors cursor-pointer shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              </button>
+            </div>
+            <button type="submit" id="send-btn"
+              class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center h-[48px]">
+              Send Query
+            </button>
+          </div>
         </form>
       </footer>
 
@@ -1265,13 +1290,18 @@
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 mt-5 pt-4 border-t border-mist dark:border-slate">
+                <div class="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-mist dark:border-slate">
+                  <button onclick="downloadWinfoTestCSV(this)" data-steps="${escapeHtml(JSON.stringify(steps)).replace(/"/g, '&quot;')}" data-scenario="${escapeHtml(scenario).replace(/"/g, '&quot;')}"
+                    class="inline-flex items-center gap-1.5 bg-[#1e6f43] dark:bg-[#27c93f] text-white dark:text-carbon-ink rounded-buttons px-4 py-2 font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Download WinfoTest CSV
+                  </button>
                   <button onclick="copyToClipboard(this)" data-code="${escapedExport}"
                     class="inline-flex items-center gap-1.5 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-4 py-2 font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Export Execution JSON
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Copy JSON
                   </button>
-                  <span class="text-[10px] text-graphite dark:text-pewter font-geist">Steps use <span class="font-geist-mono text-carbon-ink dark:text-mist">{{Variable}}</span> placeholders — no real test data embedded.</span>
+                  <span class="text-[10px] text-graphite dark:text-pewter font-geist">WinfoTest CSV includes action verbs, locators, and {{Variable}} binds.</span>
                 </div>
               </div>
             `;
@@ -1350,6 +1380,25 @@
       const message = userInput.value.trim();
       if (!message) return;
 
+      // Extract test data if present
+      let testDataPayload = null;
+      const testDataInput = document.getElementById('test-data-input');
+      const testDataRaw = testDataInput ? testDataInput.value.trim() : '';
+      if (testDataRaw) {
+        try {
+          testDataPayload = JSON.parse(testDataRaw);
+        } catch (e) {
+          testDataPayload = {};
+          testDataRaw.split('\n').forEach(line => {
+            const sep = line.includes(':') ? ':' : (line.includes('=') ? '=' : (line.includes(',') ? ',' : null));
+            if (sep) {
+              const [k, ...v] = line.split(sep);
+              if (k && v.length) testDataPayload[k.trim()] = v.join(sep).trim();
+            }
+          });
+        }
+      }
+
       appendMessage('user', message, true);
       userInput.value = '';
       autoResizeInput();
@@ -1363,7 +1412,10 @@
         const response = await fetch("/api/v1/chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ 
+            message: message,
+            test_data: testDataPayload
+          })
         });
 
         if (!response.ok) {
@@ -1452,6 +1504,66 @@
         userInput.focus();
       }
     });
+
+    window.toggleTestDataDrawer = function () {
+      const drawer = document.getElementById('test-data-drawer');
+      const btn = document.getElementById('test-data-btn');
+      if (drawer) {
+        drawer.classList.toggle('hidden-state');
+        if (!drawer.classList.contains('hidden-state')) {
+          document.getElementById('test-data-input').focus();
+          btn.classList.add('text-ember-red', 'dark:text-ember-red');
+        } else {
+          btn.classList.remove('text-ember-red', 'dark:text-ember-red');
+        }
+      }
+    };
+
+    window.handleTestDataFileUpload = function (input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target.result;
+        document.getElementById('test-data-input').value = content;
+        const drawer = document.getElementById('test-data-drawer');
+        if (drawer.classList.contains('hidden-state')) {
+          drawer.classList.remove('hidden-state');
+        }
+        document.getElementById('test-data-btn').classList.add('text-ember-red', 'dark:text-ember-red');
+      };
+      reader.readAsText(file);
+    };
+
+    window.downloadWinfoTestCSV = async function (btn) {
+      try {
+        const rawSteps = btn.getAttribute('data-steps');
+        const scenario = btn.getAttribute('data-scenario') || 'winfotest_steps';
+        const steps = JSON.parse(rawSteps);
+        
+        const response = await fetch('/api/v1/export/steps-csv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ steps: steps })
+        });
+        
+        if (!response.ok) throw new Error('Failed to generate CSV');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const cleanName = scenario.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 35);
+        a.download = `${cleanName || 'winfotest_steps'}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Failed to export CSV:', err);
+        alert('Could not export CSV file.');
+      }
+    };
 
     window.copyToClipboard = function (button) {
       const code = button.getAttribute('data-code');
