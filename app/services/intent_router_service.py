@@ -68,6 +68,7 @@ TOOL_ANCHORS: Dict[str, Dict] = {
     "generate_script_steps": {
         "intent_enum": IntentName.GENERATE_SCRIPT_STEPS,
         "anchors": [
+            # Technical QA Anchors
             "Generate test steps for creating a supplier in Oracle",
             "Build automation steps for approving a purchase order",
             "Create test script steps for processing an invoice",
@@ -76,6 +77,13 @@ TOOL_ANCHORS: Dict[str, Dict] = {
             "What steps do I need to automate vendor creation",
             "Build steps for order to cash process",
             "Create automation steps for accounts payable",
+            # Conversational Natural Language Anchors
+            "How do I add a new supplier with their office address and payment method",
+            "Give me the steps to create and submit a supplier invoice in Accounts Payable",
+            "Walk me through entering a new customer sales order and booking it",
+            "I want to test creating a vendor with corporate address",
+            "Steps for hiring a new employee in HR",
+            "How to create and book a sales order step by step",
         ],
         "micro_schema": '{"scenario": "<business process description>", "process_area": "<Oracle process area if mentioned, else empty>"}',
         "micro_instruction": (
@@ -244,7 +252,7 @@ class IntentRouterService:
     def route(self, request: IntentRequest) -> MultiIntentResult:
         if not settings.is_llm_configured:
             logger.warning("LLM not configured; returning unknown intent.")
-            return self._unresolvable("LLM configuration is missing.")
+            return self._unresolvable("LLM not configured.")
 
         query = request.user_query.strip()
 
