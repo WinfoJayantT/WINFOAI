@@ -410,13 +410,13 @@ class StepGenerationService:
             except Exception:
                 pass
 
-        # 3. Assign sequential step numbers and infer Playwright locator_code & input_type
+        # 3. Assign sequential step numbers and infer Playwright locator_code, input_type, and strict input_parameter / default_value
         final_steps: List[Dict[str, Any]] = []
         for i, st in enumerate(parsed_steps, start=1):
             act = st["action"]
-            target = st["target_element"]
-            param = st["input_parameter"]
-            desc = st["step_description"]
+            target = st["target_element"].strip()
+            param_raw = st["input_parameter"].strip()
+            desc = st["step_description"].strip()
 
             # Infer input_type
             if "Text Field" in act or "Enter" in act or "Type" in act:
@@ -434,26 +434,67 @@ class StepGenerationService:
             elif "Verify" in act:
                 input_type = "Validation"
                 locator_code = f'expect(page.get_by_text("{target}")).to_be_visible()'
+            elif "Tab" in act or "Key" in act:
+                input_type = "Other"
+                locator_code = 'page.keyboard.press("Tab")'
+            elif "Wait" in act:
+                input_type = "Other"
+                locator_code = 'page.wait_for_load_state("networkidle")'
             else:
                 input_type = "Other"
                 locator_code = f'page.locator("{target}").click()'
 
-            # Match default value from test_data if available
+            # Strict WinfoTest input_parameter assignment:
+            # - Tells the automation runner WHERE on the screen to click, type, or navigate
+            if target:
+                input_param = target
+            elif "Tab" in act:
+                input_param = "Click Tab"
+            elif "Wait" in act:
+                input_param = "Wait till load"
+            elif "Login" in act:
+                input_param = "Username>Password"
+            else:
+                input_param = desc or act
+
+            # Strict WinfoTest default_value assignment:
+            # - For Data-entry steps (Textbox, Dropdown, Select):
+            #   1. Match test_data value if provided by user
+            #   2. Else use parameter token (e.g. {{Supplier_Name}})
+            #   3. Else generate {{Target_Name}}
+            # - For Click / Navigate / Wait / Tab: default_value must be empty ("")
             default_val = ""
-            if param:
-                # Strip {{ and }}
-                raw_param_name = re.sub(r"[{}\s]", "", param).lower()
-                if raw_param_name in data_lookup:
-                    default_val = data_lookup[raw_param_name]
-                elif raw_param_name.replace("_", "") in data_lookup:
-                    default_val = data_lookup[raw_param_name.replace("_", "")]
+            if input_type in ("Textbox", "Dropdown") or "Enter" in act or "Select" in act or "Option" in act:
+                # Check user test_data
+                matched_test_val = ""
+                if param_raw:
+                    raw_key = re.sub(r"[{}\s]", "", param_raw).lower()
+                    if raw_key in data_lookup:
+                        matched_test_val = data_lookup[raw_key]
+                    elif raw_key.replace("_", "") in data_lookup:
+                        matched_test_val = data_lookup[raw_key.replace("_", "")]
+
+                if not matched_test_val and target:
+                    target_key = target.lower().strip()
+                    if target_key in data_lookup:
+                        matched_test_val = data_lookup[target_key]
+                    elif target_key.replace(" ", "_") in data_lookup:
+                        matched_test_val = data_lookup[target_key.replace(" ", "_")]
+
+                if matched_test_val:
+                    default_val = matched_test_val
+                elif param_raw:
+                    default_val = param_raw
+                elif target:
+                    clean_var = re.sub(r"[^a-zA-Z0-9_]", "_", target.replace(" ", "_"))
+                    default_val = f"{{{{{clean_var}}}}}"
 
             final_steps.append({
                 "step_no": i,
                 "action": act,
                 "step_description": desc,
                 "target_element": target,
-                "input_parameter": param,
+                "input_parameter": input_param,
                 "input_type": input_type,
                 "locator_code": locator_code,
                 "default_value": default_val,

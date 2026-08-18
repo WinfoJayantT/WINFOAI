@@ -1227,15 +1227,15 @@
 
             let stepsHtml = '';
             steps.forEach(step => {
-              const no      = step.step_no || '?';
-              const action  = step.action || 'Navigate';
-              const desc    = step.step_description || '';
-              const target  = step.target_element || '';
-              const param   = step.input_parameter || '';
-              const colour  = actionColours[action] || 'bg-fog text-graphite dark:bg-slate dark:text-mist';
+              const no         = step.step_no || '?';
+              const action     = step.action || 'Navigate';
+              const desc       = step.step_description || '';
+              const target     = step.input_parameter || step.target_element || '';
+              const defaultVal = step.default_value || '';
+              const colour     = actionColours[action] || 'bg-fog text-graphite dark:bg-slate dark:text-mist';
 
-              const paramBadge = param
-                ? `<span class="inline-block font-geist-mono text-[10px] bg-[#fff7ed] text-[#c2410c] dark:bg-[#431407] dark:text-[#fb923c] px-2 py-0.5 rounded-badges border border-orange-200 dark:border-orange-900 ml-1.5 select-all">${escapeHtml(param)}</span>`
+              const valBadge = defaultVal
+                ? `<span class="inline-block font-geist-mono text-[10px] bg-[#fff7ed] text-[#c2410c] dark:bg-[#431407] dark:text-[#fb923c] px-2 py-0.5 rounded-badges border border-orange-200 dark:border-orange-900 ml-1.5 select-all font-semibold">Value: ${escapeHtml(defaultVal)}</span>`
                 : '';
 
               stepsHtml += `
@@ -1244,8 +1244,8 @@
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-1.5 mb-1">
                       <span class="font-geist-mono text-[10px] px-2 py-0.5 rounded-badges font-bold ${colour}">${escapeHtml(action)}</span>
-                      ${target ? `<span class="font-geist-mono text-[10px] text-graphite dark:text-ash-border">'${escapeHtml(target)}'</span>` : ''}
-                      ${paramBadge}
+                      ${target ? `<span class="font-geist-mono text-[10px] text-graphite dark:text-ash-border font-medium">Target: '${escapeHtml(target)}'</span>` : ''}
+                      ${valBadge}
                     </div>
                     ${desc ? `<p class="text-graphite dark:text-ash-border leading-relaxed text-[11px]">${escapeHtml(desc)}</p>` : ''}
                   </div>
