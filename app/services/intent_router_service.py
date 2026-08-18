@@ -76,12 +76,6 @@ TOOL_ANCHORS: Dict[str, Dict] = {
             "What steps do I need to automate vendor creation",
             "Build steps for order to cash process",
             "Create automation steps for accounts payable",
-            "How do I create a new supplier with address and payment method",
-            "Give me the steps to add a vendor in procurement",
-            "I want to test creating a supplier with corporate address",
-            "Walk me through entering an AP invoice with PO matching",
-            "Steps for hiring a new employee in HR",
-            "How to create and book a sales order step by step",
         ],
         "micro_schema": '{"scenario": "<business process description>", "process_area": "<Oracle process area if mentioned, else empty>"}',
         "micro_instruction": (
