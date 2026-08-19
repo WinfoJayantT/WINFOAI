@@ -1,19 +1,41 @@
-# STREAMING_CHUNK:Initializing test script repository with UUID serialization handling...
+"""
+Test Script Repository
+======================
+
+This module manages all direct PostgreSQL interactions for the core `test_scripts` table.
+It handles fetching, fuzzy matching, and deep relational joins (Modules, Process Areas) 
+to fully hydrate test script entities before they are used by the AI domain services.
+
+Key Responsibilities:
+  1. Entity Hydration: Joins `test_scripts` with `modules` and `process_areas` to provide
+     a complete business context for the AI.
+  2. Type Serialization: Safely casts PostgreSQL-specific types (UUID, Decimal, Date) into
+     JSON-serializable primitives for the FastAPI layer.
+  3. Fuzzy Resolution: Implements fallback ILIKE querying to gracefully handle user typos 
+     when requesting a script by name or number.
+"""
+
 import logging
-logger = logging.getLogger(__name__)
+import re
+from datetime import datetime, date
+from decimal import Decimal
 from uuid import UUID
+
 from sqlalchemy import text
+
 from app.core.config import settings
 from app.repositories.db import engine
 
+# ── logger initialization ───────────────────────────────────────────────
+logger = logging.getLogger(__name__)
 
-import re
 
-from datetime import datetime, date
-from decimal import Decimal
-
+# ── serialization utilities ─────────────────────────────────────────────
 def _serialize_row(row: dict) -> dict:
-    """Helper to convert non-JSON-serializable objects (UUID, datetime, Decimal) to JSON-serializable types."""
+    """
+    Helper to convert non-JSON-serializable database objects (UUID, datetime, Decimal) 
+    to JSON-serializable types for standard FastAPI output.
+    """
     serialized = {}
     for k, v in row.items():
         if isinstance(v, UUID):
@@ -24,14 +46,21 @@ def _serialize_row(row: dict) -> dict:
             serialized[k] = float(v)
         else:
             serialized[k] = v
+            
+    # Alias standard ID mappings
     if "test_script_id" in serialized and "id" not in serialized:
         serialized["id"] = serialized["test_script_id"]
     if "script_name" in serialized and "name" not in serialized:
         serialized["name"] = serialized["script_name"]
+        
     return serialized
 
 
 def _match_process(script_data: dict, processes: list) -> str:
+    """
+    Attempts to map a raw script to a high-level Oracle Modern Best Practice (MBP) process.
+    Falls back to basic keyword matching on the script ID if no formal mapping exists.
+    """
     from app.services.process_mapping_service import process_mapping_service
     mbp = process_mapping_service.get_mapping_for_script(script_data)
     if mbp and mbp.get("l1_process"):
@@ -51,15 +80,29 @@ def _match_process(script_data: dict, processes: list) -> str:
     return "General Enterprise Process"
 
 
+# ── class definition ──────────────────────────────────────────────────
 class TestScriptRepository:
+    """
+    Repository layer for querying the `test_scripts` table and its dimensional relationships.
+    """
+
     def _get_processes(self, conn) -> list:
+        """Helper to fetch the master list of all known processes."""
         try:
             res = conn.execute(text("SELECT process_code, process_name FROM processes"))
             return [dict(r) for r in res.mappings().all()]
         except Exception:
             return []
 
+    # ── public repository methods ───────────────────────────────────────
     def get_taxonomies(self) -> dict:
+        """
+        Retrieves the distinct lists of Modules, Processes, and Process Areas.
+        Used to populate UI dropdowns and guide LLM prompt parameters.
+        
+        Returns:
+            dict: Lists of taxonomy strings.
+        """
         try:
             with engine.connect() as conn:
                 processes = conn.execute(text("SELECT process_name FROM processes")).scalars().all()
@@ -74,7 +117,13 @@ class TestScriptRepository:
             logger.error("Failed to fetch taxonomies: %s", exc)
             return {"processes": [], "modules": [], "process_areas": []}
 
-    def list_all(self):
+    def list_all(self) -> list:
+        """
+        Fetches every non-deleted test script in the database, joined with Module and Process Area names.
+        
+        Returns:
+            list: Fully serialized list of all script dictionaries.
+        """
         try:
             with engine.connect() as conn:
                 processes = self._get_processes(conn)
@@ -89,6 +138,7 @@ class TestScriptRepository:
                 """
                 result = conn.execute(text(query))
                 rows = result.mappings().all()
+                
                 serialized = []
                 for row in rows:
                     d = _serialize_row(dict(row))
@@ -99,10 +149,22 @@ class TestScriptRepository:
             logger.error("Failed to list test scripts from DB: %s", exc)
             return []
 
-    def get_by_id(self, script_id: str):
+    def get_by_id(self, script_id: str) -> dict:
+        """
+        Fetches a single test script by its exact ID, Qualified Name, or Script Number.
+        Implements a fallback fuzzy token search if an exact match is not found.
+        
+        Args:
+            script_id (str): The search token provided by the user.
+            
+        Returns:
+            dict: The serialized script payload, or None if completely unmatched.
+        """
         try:
             with engine.connect() as conn:
                 processes = self._get_processes(conn)
+                
+                # 1. Attempt exact match
                 query = """
                     SELECT s.*, 
                            m.module_name as module, 
@@ -118,7 +180,7 @@ class TestScriptRepository:
                 )
                 row = result.mappings().first()
                 
-                # Fallback to fuzzy word match if exact match fails
+                # 2. Fallback to fuzzy keyword weighting if exact match fails
                 if not row:
                     words = [w for w in script_id.split() if len(w) > 2]
                     if words:
@@ -144,15 +206,16 @@ class TestScriptRepository:
                     d = _serialize_row(dict(row))
                     d["process"] = _match_process(d, processes)
                     return d
+                    
                 return None
         except Exception as exc:
             logger.error("Failed to get script by id %s: %s", script_id, exc)
             return None
 
-    def get_script_by_identifier(self, identifier: str):
+    def get_script_by_identifier(self, identifier: str) -> dict:
+        """Alias for get_by_id."""
         return self.get_by_id(identifier)
 
 
-
-
+# ── singleton export ──────────────────────────────────────────────────
 test_script_repository = TestScriptRepository()

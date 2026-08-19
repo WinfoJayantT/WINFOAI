@@ -1,6 +1,17 @@
+"""
+WinfoTest AI Tool Registry Service
+==================================
+
+This module orchestrates the entire AI backend execution pipeline.
+It acts as the central traffic cop, receiving incoming chat requests, querying the
+`IntentRouterService` to determine the user's intent, dispatching the request to the
+appropriate domain service, logging audit telemetry, and formatting the output stream.
+"""
+
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Generator, Optional
+import json
 
 from app.repositories.audit_repository import audit_repository
 from app.schemas.cluster import ClusterRequest
@@ -16,32 +27,57 @@ from app.services.execution_orchestration_service import execution_orchestration
 from app.services.test_suite_service import test_suite_service
 from app.services.risk_assessment_service import risk_assessment_service
 from app.services.step_generation_service import step_generation_service
+from app.clients.llm_client import llm_client
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 
-from app.clients.llm_client import llm_client
-import json
-
+# ── class definition ──────────────────────────────────────────────────
 class ToolRegistryService:
+    """
+    Core Orchestrator for mapping user intents to concrete backend service execution.
+    
+    Responsibilities:
+      - Intent dispatch via `IntentRouterService`.
+      - Safe execution of underlying tools with unified error handling.
+      - Asynchronous Server-Sent Events (SSE) streaming for real-time frontend UI feedback.
+      - Comprehensive database auditing for analytics.
+    """
+
+    # ── streaming chat dispatch ─────────────────────────────────────────
     async def stream_chat(
         self, user_query: str, session_id: str = "default", test_data: Optional[Dict[str, Any]] = None
     ) -> Generator[str, None, None]:
+        """
+        Processes a chat query and yields an SSE stream of status tokens and the final JSON payload.
+        
+        Args:
+            user_query (str): The raw text input from the user.
+            session_id (str): Optional UUID for tracking multi-turn conversation state.
+            test_data (Dict): Optional contextual testing parameters attached from the frontend.
+            
+        Yields:
+            str: SSE formatted chunks (e.g. `data: {"type": "token", "content": "..."}\\n\\n`)
+        """
         start_time = time.time()
         logger.info(f"Streaming chat query: '{user_query}' for session: {session_id}")
 
         try:
+            # 1. Resolve Intent
             intent_request = IntentRequest(user_query=user_query)
             route_result: MultiIntentResult = intent_router_service.route(intent_request)
 
             tool_results = []
             ambiguous_intents = []
             
+            # 2. Iterate and Execute Resolved Intents
             for intent_res in route_result.intents:
                 logger.info(
                     f"Routed intent: {intent_res.intent} -> tool: {intent_res.tool} (Confidence: {intent_res.confidence})"
                 )
                 
+                # Check confidence thresholding
                 if intent_res.confidence < 0.70 or intent_res.tool == "unknown" or intent_res.intent == IntentName.UNKNOWN:
                     ambiguous_intents.append(intent_res)
                     continue
@@ -50,6 +86,7 @@ class ToolRegistryService:
                 if test_data:
                     args_to_pass["test_data"] = test_data
 
+                # Execute target service tool
                 res = self.execute_tool(
                     intent_res.tool, args_to_pass, session_id=session_id
                 )
@@ -58,6 +95,7 @@ class ToolRegistryService:
                 
                 tool_results.append(res)
                 
+                # 3. Log execution telemetry asynchronously
                 duration_ms = int((time.time() - start_time) * 1000)
                 rec_count = len(res.get("execution_steps", [])) or len(res.get("matches", [])) or len(res.get("risk_items", [])) or 1
                 audit_repository.log_execution(
@@ -70,6 +108,7 @@ class ToolRegistryService:
                     session_id=session_id,
                 )
                 
+            # 4. Handle Ambiguous Queries
             if ambiguous_intents and not tool_results:
                 ambiguous_res = {
                     "status": "ambiguous",
@@ -92,7 +131,7 @@ class ToolRegistryService:
                 yield f'data: {{"type": "done", "results": []}}\n\n'
                 return
 
-            # Emit result immediately to UI with safe serialization
+            # 5. Emit successful final result payload back to UI
             final_payload = json.dumps({"type": "done", "results": tool_results}, default=str)
             yield f'data: {final_payload}\n\n'
 
@@ -107,9 +146,15 @@ class ToolRegistryService:
             yield f'data: {{"type": "token", "content": "An internal error occurred while processing your request."}}\n\n'
             yield f'data: {{"type": "done", "results": [{json.dumps(err_res, default=str)}]}}\n\n'
 
+
+    # ── synchronous chat dispatch ───────────────────────────────────────
     def handle_chat(
         self, user_query: str, session_id: str = "default"
     ) -> Dict[str, Any]:
+        """
+        Synchronous fallback for processing chat requests. 
+        Functions identically to `stream_chat` but blocks until the entire payload is ready.
+        """
         start_time = time.time()
         logger.info(f"Handling chat query: '{user_query}' for session: {session_id}")
 
@@ -181,9 +226,23 @@ class ToolRegistryService:
                 "reasoning": str(exc),
             }
 
+
+    # ── backend tool execution mapping ──────────────────────────────────
     def execute_tool(
         self, tool_name: str, arguments: Dict[str, Any], session_id: str = "default"
     ) -> Dict[str, Any]:
+        """
+        Maps a resolved tool name string directly to its corresponding Domain Service.
+        Extracts expected arguments from the dynamic JSON and fires the backend logic.
+        
+        Args:
+            tool_name (str): The registered name of the tool (e.g. 'generate_script_steps')
+            arguments (Dict): The parameters extracted by the LLM (e.g. '{"scenario": "..."}')
+            session_id (str): Identifies the user session state.
+        
+        Returns:
+            Dict: The structured output payload generated by the backend service.
+        """
         logger.info(f"Executing tool '{tool_name}' with arguments: {arguments}")
 
         try:
@@ -195,8 +254,10 @@ class ToolRegistryService:
 
             elif tool_name == "semantic_search_tests":
                 query = arguments.get("query", "")
-                limit = int(arguments.get("limit", 5))
-                include_steps = bool(arguments.get("include_steps", False))
+                # Enforce minimum 8 results — LLM micro-extractor may under-estimate limit
+                limit = max(8, int(arguments.get("limit", 8)))
+                # Steps are never fetched for a plain search — user must explicitly ask
+                include_steps = False
                 filters = arguments.get("filters")
                 return semantic_search_service.search(
                     query, limit=limit, include_steps=include_steps, filters=filters
@@ -279,4 +340,5 @@ class ToolRegistryService:
             }
 
 
+# ── singleton export ──────────────────────────────────────────────────
 tool_registry_service = ToolRegistryService()

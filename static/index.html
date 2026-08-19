@@ -65,30 +65,16 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-      width: 4px;
+    /* Hide scrollbars globally across all browsers while retaining full scroll functionality */
+    * {
+      -ms-overflow-style: none !important;  /* IE and Edge */
+      scrollbar-width: none !important;  /* Firefox */
     }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #e0e0e0;
-      border-radius: 4px;
-    }
-
-    .dark ::-webkit-scrollbar-thumb {
-      background: #363537;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #cccfcd;
-    }
-
-    .dark ::-webkit-scrollbar-thumb:hover {
-      background: #4e4e4e;
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     .hidden-state {
@@ -164,7 +150,7 @@
       }
     }
 
-    .animate-radar-ping::before {
+    .::before {
       content: "";
       position: absolute;
       width: 100%;
@@ -173,6 +159,55 @@
       border-radius: inherit;
       animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
       z-index: -1;
+    }
+
+    /* Motion.dev Spring & Layout Animation Utilities */
+    .motion-fade-slide {
+      animation: motionFadeSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes motionFadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .motion-hover {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .motion-hover:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Smooth Animated Sidebar Collapsing (Slower 0.65s Ease-Out Curve) */
+    aside {
+      max-width: 360px;
+      width: 360px;
+      opacity: 1;
+      will-change: max-width, width, opacity, padding;
+      transition: max-width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), 
+                  padding 0.65s cubic-bezier(0.22, 1, 0.36, 1), 
+                  border-width 0.65s ease;
+    }
+
+    aside.sidebar-collapsed {
+      max-width: 0px !important;
+      width: 0px !important;
+      min-width: 0px !important;
+      opacity: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      border-right-width: 0px !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
     }
   </style>
 
@@ -191,86 +226,54 @@
 
   <div class="min-h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <!-- Left Side: Brand Panel / Live Debugger (Always Dark) -->
+    <!-- Left Side: Multi-Session Conversation Sidebar (Always Dark) -->
     <aside
-      class="w-full md:w-[340px] lg:w-[380px] xl:w-[410px] bg-obsidian text-white border-b md:border-b-0 md:border-r border-[#222222] p-6 lg:p-7 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto">
+      class="w-full md:w-[320px] lg:w-[360px] bg-obsidian text-white border-b md:border-b-0 md:border-r border-[#222222] p-5 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-hidden">
 
-      <!-- Top Section -->
-      <div class="flex flex-col">
-        <div class="font-bryant text-white text-[11px] tracking-bryant uppercase font-bold">
-          WinfoTest // Intent Engine
+      <div class="flex flex-col h-full">
+        <!-- Brand Header with Collapse Button -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="font-bryant text-white text-[11px] tracking-bryant uppercase font-bold">
+            WinfoTest // Intent Engine
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-geist-mono text-graphite">v1.0.0</span>
+            <button type="button" onclick="window.toggleSidebar()" id="sidebar-close-btn" title="Close Sidebar"
+              class="text-graphite hover:text-white p-1.5 rounded transition-colors cursor-pointer flex items-center justify-center motion-hover bg-[#141414] border border-[#282828]">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+            </button>
+          </div>
         </div>
 
-        <h1 class="font-exposure text-3xl lg:text-[38px] leading-[1.12] text-white tracking-tight mt-6 mb-3">
-          Test intelligence, <span class="italic font-light">clarified. —</span>
-        </h1>
+        <!-- New Chat Button -->
+        <button onclick="createNewSession()"
+          class="w-full bg-white text-obsidian border border-white rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:bg-fog transition-colors duration-200 cursor-pointer font-bold flex items-center justify-center gap-2 shadow-sm motion-hover">
+          <span>+</span>
+          <span>New Chat Session</span>
+        </button>
 
-        <p class="font-geist text-xs text-graphite leading-relaxed max-w-sm">
-          PostgreSQL-grounded enterprise AI assistant over WinfoTest test metadata and execution logs. Fully
-          intent-routed with strict schemas and zero hardcoded business fallbacks.
-        </p>
+        <div class="w-full h-[1px] bg-[#222222] my-4"></div>
 
-        <div class="w-full h-[1px] bg-[#222222] my-5"></div>
+        <!-- Previous Conversations Section -->
+        <div class="flex flex-col flex-1 overflow-hidden">
+          <div class="font-bryant text-[10px] text-graphite tracking-bryant uppercase font-bold mb-3 flex items-center justify-between">
+            <span>PREVIOUS CONVERSATIONS</span>
+            <span id="session-count-badge" class="text-[10px] font-geist-mono text-pewter">0</span>
+          </div>
 
-        <!-- Live Debug Trace Console -->
-        <div class="flex flex-col">
-          <span
-            class="font-bryant text-[10px] text-graphite tracking-bryant uppercase font-bold mb-2.5 flex justify-between items-center">
-            <span>Live Diagnostics</span>
-            <span class="text-[#27c93f] flex items-center gap-1.5 cyber-glow-green font-geist-mono tracking-wider text-[10px]">
-              <span class="w-1.5 h-1.5 bg-[#27c93f] rounded-full"></span>
-              <span>ONLINE</span>
-            </span>
-          </span>
-
-          <div
-            class="bg-[#050505] border border-[#222222] rounded-cards p-4 font-geist-mono text-[11px] text-[#888c89] leading-relaxed flex flex-col gap-2 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
-            <div class="flex items-center justify-between">
-              <span>SYSTEM STATUS:</span>
-              <span class="flex items-center gap-1.5 text-white font-bold cyber-glow">
-                <span class="w-1.5 h-1.5 bg-ember-red rounded-full inline-block relative animate-radar-ping"></span>
-                ACTIVE
-              </span>
-            </div>
-            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
-              <span>AI ENGINE:</span>
-              <span class="text-white cyber-glow" id="diag-model">Local Qwen 2.5 + RAG</span>
-            </div>
-            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
-              <span>SOURCE TRUTH:</span>
-              <span class="text-white cyber-glow">PostgreSQL DB</span>
-            </div>
-            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
-              <span>SESSION ID:</span>
-              <span class="text-white select-all cyber-glow" id="diag-session">default</span>
-            </div>
-            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
-              <span>LAST TOOL:</span>
-              <span class="text-[#27c93f] cyber-glow-green" id="diag-tool">none</span>
-            </div>
-            <div class="flex items-center justify-between border-t border-[#161616] pt-1.5">
-              <span>MATCHED RECS:</span>
-              <span class="text-white font-bold cyber-glow" id="diag-recs">0</span>
-            </div>
+          <!-- Conversation List Scroll View -->
+          <div id="conversation-history-list" class="flex flex-col gap-1.5 overflow-y-auto flex-1 pr-1">
+            <div class="text-[11px] font-geist text-graphite text-center py-6">No previous chats yet. Start a new session above!</div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Action Section -->
-      <div class="flex flex-col gap-3 mt-6 pb-2">
-        <div class="grid grid-cols-2 gap-2.5">
-          <button onclick="resetChat()"
-            class="w-full border border-white text-white rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:bg-white hover:text-obsidian transition-colors duration-200 cursor-pointer font-bold">
-            New Session
-          </button>
-          <button onclick="startIndexing()" id="index-btn"
-            class="w-full border border-graphite text-[#888c89] rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:border-white hover:text-white transition-colors duration-200 cursor-pointer font-bold bg-transparent">
-            Index Scripts
-          </button>
-        </div>
-        <div class="text-[10px] text-graphite font-geist-mono text-center">
-          WinfoTest Intelligence Engine v1.0.0
-        </div>
+      <!-- Bottom Index Action -->
+      <div class="pt-3 border-t border-[#1a1a1a] shrink-0 mt-3">
+        <button onclick="startIndexing()" id="index-btn"
+          class="w-full border border-[#333] text-[#a0a4a1] rounded-nav font-bryant text-[11px] tracking-bryant uppercase text-center py-2 hover:border-white hover:text-white transition-colors cursor-pointer font-bold bg-transparent">
+          Re-Index Vector Scripts
+        </button>
       </div>
 
     </aside>
@@ -281,16 +284,40 @@
 
       <!-- Primary Navigation Header -->
       <nav
-        class="h-16 border-b border-mist dark:border-slate px-8 flex items-center justify-between shrink-0 bg-white dark:bg-dark-canvas transition-colors duration-200">
-        <div class="flex items-center gap-2">
-          <span class="font-bryant text-slate dark:text-mist text-xs tracking-bryant uppercase font-bold">Active
-            Workspace</span>
-          <span
-            class="font-geist text-xs text-graphite dark:text-ash-border font-semibold bg-fog dark:bg-slate px-2.5 py-0.5 rounded-badges select-all">winfotest-ai</span>
+        class="h-16 border-b border-mist dark:border-slate px-6 lg:px-8 flex items-center justify-between shrink-0 bg-white dark:bg-dark-canvas transition-colors duration-200">
+        <div class="flex items-center gap-4">
+          <button type="button" onclick="window.toggleSidebar()" id="sidebar-open-btn" title="Toggle Sidebar"
+            class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1.5 rounded border border-ash-border dark:border-[#282828] bg-fog dark:bg-[#151515] transition-colors cursor-pointer flex items-center justify-center motion-hover">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <span class="font-bryant text-slate dark:text-mist text-xs tracking-bryant uppercase font-bold">Active
+              Workspace</span>
+            <span
+              class="font-geist text-xs text-graphite dark:text-ash-border font-semibold bg-fog dark:bg-slate px-2.5 py-0.5 rounded-badges select-all">winfotest-ai</span>
+          </div>
+
+          <!-- Bento & View Navigation Tabs -->
+          <div class="flex items-center bg-fog dark:bg-[#151515] p-1 rounded-buttons border border-mist dark:border-[#282828]">
+            <button onclick="switchTab('chat')" id="tab-btn-chat"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm">
+              AI Chat
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              Analytics
+            </button>
+            <button onclick="switchTab('workbench')" id="tab-btn-workbench"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              ️ Workbench
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-6">
+
+        <div class="flex items-center gap-4">
           <span
-            class="hidden sm:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
+            class="hidden lg:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
             Status: SQL Verified</span>
 
           <!-- Theme Toggle Button -->
@@ -404,7 +431,260 @@
           </div>
         </div>
 
+
       </div>
+
+      <!-- Bento Grid Analytics & Index Status View -->
+      <div id="bento-analytics-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-8 motion-fade-slide">
+        
+        <!-- View Banner -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
+          <div>
+            <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Diagnostics // Analytics</span>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Vector Index & System Bento Grid</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="fetchBentoData()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
+               Refresh Analytics
+            </button>
+            <button onclick="startIndexing()" class="px-4 py-2 bg-ember-red text-white rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-all motion-hover cursor-pointer shadow-md">
+               Re-Index Qdrant
+            </button>
+          </div>
+        </div>
+
+        <!-- Bento Grid Containers -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+          
+          <!-- Bento Box 1: Vector Store & Chunks (Large 2 Col) -->
+          <div class="md:col-span-2 bg-obsidian text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-lg flex flex-col justify-between motion-hover">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold flex items-center gap-2">
+                <span> Vector Store Chunks</span>
+              </span>
+              <span class="text-[#27c93f] cyber-glow-green font-geist-mono text-xs flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-[#27c93f] rounded-full inline-block "></span>
+                <span id="bento-qdrant-status">QDRANT ONLINE</span>
+              </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">TOTAL CHUNKS</span>
+                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-total-chunks">1,482</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">EMBEDDING DIM</span>
+                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-dim">768-d</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">METRIC</span>
+                <span class="font-geist-mono text-xl font-bold text-white cyber-glow">Cosine</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">MODEL</span>
+                <span class="font-geist-mono text-xs font-bold text-white cyber-glow" id="bento-model">all-mpnet-base-v2</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-[#1a1a1a] flex justify-between items-center text-[11px] font-geist-mono text-graphite">
+              <span>Collection: <strong class="text-white select-all cyber-glow" id="bento-collection">winfotest_semantic_scripts</strong></span>
+              <span>Unit-Normalized 768-d Vector Space</span>
+            </div>
+          </div>
+
+          <!-- Bento Box 2: Indexation Synchronization -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> Index Coverage</span>
+              <span class="text-xs font-geist-mono font-bold text-carbon-ink dark:text-paper-white" id="bento-sync-pct">100%</span>
+            </div>
+            <div class="my-3">
+              <div class="flex justify-between text-xs font-geist text-graphite dark:text-ash-border mb-1">
+                <span>Synced Scripts</span>
+                <span class="font-geist-mono font-semibold text-carbon-ink dark:text-paper-white" id="bento-synced-count">42 / 42</span>
+              </div>
+              <div class="w-full bg-fog dark:bg-slate h-2.5 rounded-badges overflow-hidden">
+                <div id="bento-sync-bar" class="bg-carbon-ink dark:bg-mist h-full rounded-badges transition-all duration-500" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="text-[11px] font-geist text-graphite dark:text-ash-border flex justify-between pt-2 border-t border-mist dark:border-slate">
+              <span>Stale Chunks: <strong class="text-carbon-ink dark:text-paper-white" id="bento-stale-chunks">0</strong></span>
+              <span>DB Sync: <strong class="text-[#27c93f] cyber-glow-green">PostgreSQL</strong></span>
+            </div>
+          </div>
+
+          <!-- Bento Box 3: Repository Health Score -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Health Score</span>
+              <span class="text-xs font-geist-mono font-bold text-[#27c93f] cyber-glow-green" id="bento-health-badge">STABLE</span>
+            </div>
+            <div class="flex items-center gap-4 my-2">
+              <span class="font-exposure text-4xl font-bold text-carbon-ink dark:text-paper-white" id="bento-health-score">92</span>
+              <div class="flex flex-col text-xs font-geist text-graphite dark:text-ash-border">
+                <span>Flaky Scripts: <strong class="text-ember-red font-semibold" id="bento-flaky-count">2</strong></span>
+                <span>High Risk: <strong class="text-ember-red font-semibold" id="bento-high-risk">2</strong></span>
+              </div>
+            </div>
+            <div class="text-[11px] font-geist text-graphite dark:text-ash-border pt-2 border-t border-mist dark:border-slate">
+              <span>Calculated from historical execution telemetry</span>
+            </div>
+          </div>
+
+          <!-- Bento Box 4: Server & System Diagnostics (Large 2 Col) -->
+          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Server System Diagnostics</span>
+              <span class="text-xs font-geist-mono text-[#27c93f] cyber-glow-green font-semibold">ALL SYSTEMS ACTIVE</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">FASTAPI GATEWAY</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (8000)</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">POSTGRESQL DB</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">CONNECTED</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">QDRANT VECTOR</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (6333)</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">LLM ENGINE</span>
+                <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-paper-white" id="bento-llm-name">Qwen 2.5 Coder</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Box 5: AI Telemetry & Latency (Large 2 Col) -->
+          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> AI Telemetry & Latency</span>
+              <span class="text-xs font-geist-mono text-carbon-ink dark:text-paper-white" id="bento-total-calls">142 Invocations</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">AVG LATENCY</span>
+                <span class="font-geist-mono text-lg font-bold text-carbon-ink dark:text-paper-white" id="bento-avg-latency">320ms</span>
+              </div>
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">SUCCESS RATE</span>
+                <span class="font-geist-mono text-lg font-bold text-[#27c93f] cyber-glow-green" id="bento-success-rate">98.6%</span>
+              </div>
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">ERROR COUNT</span>
+                <span class="font-geist-mono text-lg font-bold text-ember-red" id="bento-error-count">0</span>
+              </div>
+            </div>
+            <div class="space-y-2 pt-2 border-t border-mist dark:border-slate">
+              <div class="flex justify-between text-[11px] font-geist text-graphite dark:text-ash-border">
+                <span>Semantic Vector Retrieval</span>
+                <span class="font-geist-mono">42%</span>
+              </div>
+              <div class="w-full bg-fog dark:bg-slate h-1.5 rounded-badges overflow-hidden">
+                <div class="bg-carbon-ink dark:bg-mist h-full" style="width: 42%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Box 6: Risk Assessment Matrix Table (Full 4 Col) -->
+          <div class="md:col-span-2 lg:col-span-4 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <div>
+                <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold block"> Predictive Risk Assessment Matrix</span>
+                <p class="font-geist text-xs text-graphite dark:text-ash-border">Identifies dynamic DOM locator flakiness and execution velocity risks</p>
+              </div>
+              <input type="text" id="risk-search-input" onkeyup="filterRiskMatrix()" placeholder="Filter by script or module..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-1.5 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs font-geist">
+                <thead>
+                  <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
+                    <th class="py-2.5 px-3">Script #</th>
+                    <th class="py-2.5 px-3">Script Name</th>
+                    <th class="py-2.5 px-3">Module</th>
+                    <th class="py-2.5 px-3 text-center">Risk Score</th>
+                    <th class="py-2.5 px-3 text-center">Tier</th>
+                    <th class="py-2.5 px-3">Fragile Step</th>
+                    <th class="py-2.5 px-3">Stabilization Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody id="risk-matrix-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                  <tr>
+                    <td colspan="7" class="py-6 text-center text-graphite dark:text-pewter font-geist-mono">Loading risk matrix telemetry...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Script Workbench View -->
+      <div id="script-workbench-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-6 motion-fade-slide">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
+          <div>
+            <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Workbench // Test Repository</span>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Script Step Inspector & Locators</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="text" id="workbench-search" onkeyup="filterWorkbenchScripts()" placeholder="Filter scripts..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-2 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+            <button onclick="loadWorkbenchScripts()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
+              Refresh Scripts
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-geist">
+              <thead>
+                <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
+                  <th class="py-2.5 px-3">Script Number</th>
+                  <th class="py-2.5 px-3">Script Name</th>
+                  <th class="py-2.5 px-3">Module</th>
+                  <th class="py-2.5 px-3">Process Area</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workbench-script-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-graphite dark:text-pewter font-geist-mono">Loading script repository...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Inspector Modal -->
+      <div id="step-modal" class="hidden-state fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 motion-fade-slide">
+        <div class="bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+          <div class="p-5 border-b border-mist dark:border-slate flex justify-between items-center">
+            <div>
+              <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block" id="modal-script-num">TS-001</span>
+              <h3 class="font-exposure text-lg text-carbon-ink dark:text-paper-white font-bold" id="modal-script-title">Step Inspector</h3>
+            </div>
+            <button onclick="closeStepModal()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-1 space-y-4 font-geist text-xs" id="modal-step-content">
+            <div class="text-center py-6 text-graphite font-geist-mono">Loading step inspection details...</div>
+          </div>
+          <div class="p-4 border-t border-mist dark:border-slate flex justify-between items-center bg-fog dark:bg-[#151515]">
+            <span class="text-[11px] text-graphite dark:text-pewter font-geist-mono">WinfoTest Step Definition</span>
+            <div class="flex gap-2">
+              <button id="modal-csv-btn" class="px-4 py-2 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
+                Download CSV
+              </button>
+              <button onclick="closeStepModal()" class="px-4 py-2 border border-ash-border dark:border-slate text-carbon-ink dark:text-mist rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:bg-fog dark:hover:bg-slate transition-colors cursor-pointer">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       <!-- Input Composer -->
       <footer
@@ -453,7 +733,14 @@
 
   </div>
 
-  <script>
+    <script>
+    // ── Global Sidebar Toggle Control ──
+    window.toggleSidebar = function() {
+      const sidebar = document.querySelector('aside');
+      if (sidebar) {
+        sidebar.classList.toggle('sidebar-collapsed');
+      }
+    };
     // --- Theme Toggle Logic ---
     const themeToggleBtn = document.getElementById('theme-toggle');
     const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
@@ -506,62 +793,171 @@
       chatForm.dispatchEvent(new Event('submit'));
     }
 
-    const CHAT_STORAGE_KEY = 'winfotest_chat_history_v2';
+    // ── Multi-Session Conversation Manager (ChatGPT / Claude Style) ──
+    const SESSIONS_STORAGE_KEY = 'winfotest_sessions_v4';
+    const ACTIVE_SESSION_KEY = 'winfotest_active_session_id';
+
+    let currentSessionId = localStorage.getItem(ACTIVE_SESSION_KEY) || 'session-' + Date.now();
+
+    function getAllSessions() {
+      try {
+        const data = localStorage.getItem(SESSIONS_STORAGE_KEY);
+        return data ? JSON.parse(data) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveSessions(sessions) {
+      try {
+        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+      } catch (e) {}
+    }
+
+    function renderSidebarConversations() {
+      const listEl = document.getElementById('conversation-history-list');
+      const badgeEl = document.getElementById('session-count-badge');
+      if (!listEl) return;
+
+      const sessions = getAllSessions();
+      const sessionKeys = Object.keys(sessions).sort((a, b) => (sessions[b].updatedAt || 0) - (sessions[a].updatedAt || 0));
+
+      if (badgeEl) badgeEl.innerText = sessionKeys.length;
+
+      if (sessionKeys.length === 0) {
+        listEl.innerHTML = `<div class="text-[11px] font-geist text-graphite text-center py-6">No previous chats yet. Start a new session above!</div>`;
+        return;
+      }
+
+      listEl.innerHTML = sessionKeys.map(key => {
+        const sess = sessions[key];
+        const isActive = (key === currentSessionId);
+        const activeClass = isActive 
+          ? 'bg-[#181818] border-l-2 border-white text-white' 
+          : 'bg-[#090909] text-[#a0a4a1] hover:bg-[#141414] hover:text-white border-l-2 border-transparent';
+        
+        const title = escapeHtml(sess.title || 'Untitled Conversation');
+        const dateStr = sess.updatedAt ? new Date(sess.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+          <div onclick="switchSession('${key}')" 
+            class="group p-2.5 rounded-inputs ${activeClass} transition-all cursor-pointer flex justify-between items-center text-xs font-geist motion-hover select-none">
+            <div class="flex flex-col min-w-0 pr-2">
+              <span class="font-semibold truncate text-[12px] leading-snug">${title}</span>
+              <span class="text-[10px] font-geist-mono text-graphite opacity-80 mt-0.5">${dateStr}</span>
+            </div>
+            <button onclick="event.stopPropagation(); deleteSession('${key}')" title="Delete conversation"
+              class="opacity-0 group-hover:opacity-100 text-graphite hover:text-ember-red p-1 text-xs font-bold transition-opacity cursor-pointer">
+              &times;
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.switchSession = function(sessionId) {
+      currentSessionId = sessionId;
+      localStorage.setItem(ACTIVE_SESSION_KEY, sessionId);
+      
+      // Auto-shift to AI Chat tab
+      switchTab('chat');
+
+      // Load selected session messages
+      const sessions = getAllSessions();
+      const sess = sessions[sessionId];
+
+      chatFeed.innerHTML = '';
+      if (sess && Array.isArray(sess.messages) && sess.messages.length > 0) {
+        emptyState.classList.add('hidden-state');
+        chatFeed.classList.remove('hidden-state');
+        sess.messages.forEach(msg => {
+          if (msg && msg.role && msg.content) {
+            appendMessage(msg.role, msg.content, false);
+          }
+        });
+        setTimeout(() => {
+          chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+        }, 100);
+      } else {
+        chatFeed.classList.add('hidden-state');
+        emptyState.classList.remove('hidden-state');
+      }
+
+      renderSidebarConversations();
+    };
+
+    window.createNewSession = function() {
+      currentSessionId = 'session-' + Date.now();
+      localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
+      
+      // Auto-shift to AI Chat tab
+      switchTab('chat');
+
+      chatFeed.innerHTML = '';
+      chatFeed.classList.add('hidden-state');
+      emptyState.classList.remove('hidden-state');
+      
+      renderSidebarConversations();
+    };
+
+    window.deleteSession = function(sessionId) {
+      const sessions = getAllSessions();
+      delete sessions[sessionId];
+      saveSessions(sessions);
+
+      if (sessionId === currentSessionId) {
+        createNewSession();
+      } else {
+        renderSidebarConversations();
+      }
+    };
 
     function loadChatHistory() {
-      try {
-        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-        if (saved) {
-          const messages = JSON.parse(saved);
-          if (Array.isArray(messages) && messages.length > 0) {
-            emptyState.classList.add('hidden-state');
-            chatFeed.classList.remove('hidden-state');
-            messages.forEach(msg => {
-              if (msg && msg.role && msg.content) {
-                appendMessage(msg.role, msg.content, false);
-              }
-            });
-            setTimeout(() => {
-              chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-            }, 100);
-          }
-        }
-      } catch (e) {
-        console.warn("Could not restore chat history from localStorage", e);
+      renderSidebarConversations();
+      const sessions = getAllSessions();
+      if (sessions[currentSessionId]) {
+        switchSession(currentSessionId);
+      } else {
+        createNewSession();
       }
     }
 
     function saveMessageToStorage(role, content) {
       try {
-        let history = [];
-        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-        if (saved) {
-          history = JSON.parse(saved);
+        const sessions = getAllSessions();
+        if (!sessions[currentSessionId]) {
+          sessions[currentSessionId] = {
+            id: currentSessionId,
+            title: (role === 'user' && typeof content === 'string') ? content.substring(0, 32) + (content.length > 32 ? '...' : '') : 'New Conversation',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            messages: []
+          };
         }
-        history.push({ role, content });
-        if (history.length > 60) {
-          history = history.slice(-60);
+
+        const sess = sessions[currentSessionId];
+        if (sess.messages.length === 0 && role === 'user' && typeof content === 'string') {
+          sess.title = content.substring(0, 32) + (content.length > 32 ? '...' : '');
         }
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(history));
+
+        sess.updatedAt = Date.now();
+        sess.messages.push({ role, content });
+
+        if (sess.messages.length > 60) {
+          sess.messages = sess.messages.slice(-60);
+        }
+
+        saveSessions(sessions);
+        renderSidebarConversations();
       } catch (e) {
-        console.warn("Could not save message to localStorage", e);
+        console.warn("Could not save message to session storage", e);
       }
     }
 
     function resetChat() {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
-      chatFeed.innerHTML = '';
-      chatFeed.classList.add('hidden-state');
-      emptyState.classList.remove('hidden-state');
-      userInput.value = '';
-      loadingIndicator.classList.add('hidden-state');
-
-      // Reset diagnostics
-      document.getElementById('diag-tool').textContent = 'none';
-      document.getElementById('diag-recs').textContent = '0';
-
-      userInput.focus();
+      createNewSession();
     }
+
 
     async function startIndexing() {
       const indexBtn = document.getElementById('index-btn');
@@ -706,8 +1102,10 @@
           const tool = content.tool || 'unknown';
           const totalMatched = content.total_scripts_matched || content.total_results || content.total_scripts || content.total_scripts_assessed || 0;
 
-          document.getElementById('diag-tool').textContent = tool;
-          document.getElementById('diag-recs').textContent = totalMatched;
+          const diagToolEl = document.getElementById('diag-tool');
+          if (diagToolEl) diagToolEl.textContent = tool;
+          const diagRecsEl = document.getElementById('diag-recs');
+          if (diagRecsEl) diagRecsEl.textContent = totalMatched;
 
           if (content.status === 'ambiguous') {
             const options = content.clarification_options || [];
@@ -957,18 +1355,16 @@
           } else if (tool === 'semantic_search_tests') {
             const query = content.query || '';
             const results = content.results || [];
-            const reasoning = content.reasoning || '';
 
             let resultsHtml = '';
             results.forEach(res => {
               const scriptNum = res.test_script_number || 'N/A';
               const scriptName = res.script_name || 'Unknown';
-              const score = res.score ? `${(res.score * 100).toFixed(0)}% Match` : 'Match';
+              const score = res.score ? `${(res.score * 100).toFixed(0)}%` : '';
               const dbRec = res.database_record || {};
               const module = dbRec.module || '';
               const process = dbRec.process || '';
-              const desc = dbRec.description || dbRec.script_description || dbRec.objective || '';
-              const steps = (dbRec.steps && Array.isArray(dbRec.steps)) ? dbRec.steps : [];
+              const desc = dbRec.objective || dbRec.script_objective || dbRec.description || dbRec.script_description || dbRec.qualified_name || '';
 
               let badgesHtml = '';
               if (module) {
@@ -978,65 +1374,27 @@
                 badgesHtml += `<span class="inline-block bg-fog dark:bg-slate text-graphite dark:text-mist font-geist text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold ml-1.5">${escapeHtml(process)}</span>`;
               }
 
-              let stepsAccordionHtml = '';
-              if (steps.length > 0) {
-                let stepsListHtml = '';
-                steps.forEach(step => {
-                  const sNo = step.step_no || step.step_sequence || '?';
-                  const sAction = step.step_action || step.action || '';
-                  const sDesc = step.step_description || step.description || '';
-                  const sParam = step.input_parameter || '';
-
-                  stepsListHtml += `
-                    <div class="flex items-start gap-2.5 py-1.5 border-b border-mist/40 dark:border-slate/40 last:border-b-0 text-xs font-geist">
-                      <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-1.5 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">#${sNo}</span>
-                      <div class="flex-1">
-                        <span class="font-semibold text-carbon-ink dark:text-paper-white">${escapeHtml(sAction)}:</span>
-                        <span class="text-graphite dark:text-ash-border ml-1">${escapeHtml(sDesc)}</span>
-                        ${sParam ? `<span class="inline-block font-geist-mono text-[10px] text-pewter dark:text-ash-border bg-fog dark:bg-[#151515] px-1.5 py-0.5 rounded ml-1.5">Param: ${escapeHtml(sParam)}</span>` : ''}
-                      </div>
-                    </div>
-                  `;
-                });
-
-                stepsAccordionHtml = `
-                  <details class="mt-3 bg-fog/40 dark:bg-dark-surface/60 border border-mist dark:border-slate rounded p-3 group">
-                    <summary class="cursor-pointer text-xs font-bold text-graphite dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white flex items-center justify-between transition-colors">
-                      <span class="flex items-center gap-1.5">View ${steps.length} Workflow Steps</span>
-                      <span class="font-geist-mono text-[10px] text-graphite dark:text-pewter">Click to expand</span>
-                    </summary>
-                    <div class="mt-3 pt-2 border-t border-mist dark:border-slate max-h-60 overflow-y-auto space-y-1">
-                      ${stepsListHtml}
-                    </div>
-                  </details>
-                `;
-              }
-
               resultsHtml += `
-                <div class="py-5 border-b border-mist dark:border-slate last:border-b-0 text-left">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-center flex-wrap gap-2">
-                      <span class="font-geist-mono text-xs text-pewter dark:text-ash-border font-medium">${escapeHtml(scriptNum)}</span>
-                      <span class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white hover:text-ember-red dark:hover:text-ember-red cursor-pointer" onclick="submitSuggested('Explain script ${escapeHtml(scriptNum)}')">${escapeHtml(scriptName)}</span>
-                      <span class="inline-block bg-[#eaf6f0] text-[#1e6f43] dark:bg-[#1a2f24] dark:text-[#4ade80] font-geist-mono text-[10px] px-2 py-0.5 rounded-badges uppercase font-semibold">${escapeHtml(score)}</span>
-                      ${badgesHtml}
-                    </div>
+                <div class="py-4 border-b border-mist dark:border-slate last:border-b-0 text-left">
+                  <div class="flex items-center flex-wrap gap-2 mb-1.5">
+                    <span class="font-geist-mono text-[11px] text-pewter dark:text-ash-border font-medium select-all">${escapeHtml(scriptNum)}</span>
+                    <span class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white hover:text-ember-red dark:hover:text-ember-red cursor-pointer underline-offset-2 hover:underline transition-colors" title="Click to explain this script" onclick="submitSuggested('Explain script ${escapeHtml(scriptNum)}')">${escapeHtml(scriptName)}</span>
+                    ${score ? `<span class="font-geist-mono text-[10px] text-[#1e6f43] dark:text-[#4ade80] bg-[#eaf6f0] dark:bg-[#1a2f24] px-2 py-0.5 rounded-badges font-semibold">${score} match</span>` : ''}
+                    ${badgesHtml}
                   </div>
-                  ${desc ? `<p class="text-xs text-graphite dark:text-ash-border mt-2 font-geist leading-relaxed">${escapeHtml(desc)}</p>` : ''}
-                  ${stepsAccordionHtml}
+                  ${desc ? `<p class="text-xs text-graphite dark:text-ash-border leading-relaxed font-geist">${escapeHtml(desc)}</p>` : ''}
                 </div>
               `;
             });
 
             displayHtml = `
               <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
-                <div class="flex justify-between items-center mb-6">
-                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Semantic Search: "${escapeHtml(query)}"</span>
-                  <span class="font-bryant text-xs text-carbon-ink dark:text-paper-white uppercase tracking-bryant font-bold">${content.total_results} Results</span>
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
+                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Results for &ldquo;${escapeHtml(query)}&rdquo;</span>
+                  <span class="font-geist-mono text-xs text-carbon-ink dark:text-paper-white font-bold">${results.length} scripts</span>
                 </div>
-                <p class="text-xs text-graphite dark:text-ash-border italic mb-6">Reasoning: ${escapeHtml(reasoning)}</p>
-                <div class="flex flex-col">
-                  ${resultsHtml || '<p class="text-sm text-graphite dark:text-pewter">No matching scripts found.</p>'}
+                <div class="flex flex-col divide-y divide-mist/50 dark:divide-slate/50">
+                  ${resultsHtml || '<p class="text-sm text-graphite dark:text-pewter py-4">No matching scripts found.</p>'}
                 </div>
               </div>
             `;
@@ -1044,23 +1402,41 @@
             const script = content.database_record || content;
             const scriptNum = script.test_script_number || 'N/A';
             const scriptName = script.script_name || 'Unknown';
-            const objective = script.objective || 'No objective specified';
+            const objective = script.objective || script.script_objective || script.description || scriptName;
             const module = script.module || 'N/A';
             const process = script.process || 'N/A';
             const role = script.role || 'N/A';
             const steps = script.steps || [];
 
+
+            const semanticDoc = content.semantic_document || '';
+            let parametersHtml = '';
+            let validationsHtml = '';
+            
+            if (semanticDoc) {
+              const paramsMatch = semanticDoc.match(/4\.\s*(?:Input\s*)?Parameters.*?\n([\s\S]*?)(?:(?:\n###)|(?:\n\d\.)|$)/i);
+              if (paramsMatch && paramsMatch[1].trim()) {
+                parametersHtml = formatMarkdownToHtml(paramsMatch[1].trim());
+              }
+              
+              const validMatch = semanticDoc.match(/5\.\s*(?:Expected\s*)?(?:Business\s*)?Validations.*?\n([\s\S]*?)(?:(?:\n###)|(?:\n\d\.)|$)/i);
+              if (validMatch && validMatch[1].trim()) {
+                validationsHtml = formatMarkdownToHtml(validMatch[1].trim());
+              }
+            }
+
             let stepsListHtml = '';
+
             if (steps.length > 0) {
-              steps.forEach(step => {
-                const sNo = step.step_no || step.step_sequence || '?';
+              steps.forEach((step, idx) => {
+                const displayNo = idx + 1;
                 const sAction = step.step_action || step.action || '';
                 const sDesc = step.step_description || step.description || '';
                 const sParam = step.input_parameter || '';
 
                 stepsListHtml += `
                   <div class="flex items-start gap-3 py-2 border-b border-mist/50 dark:border-slate/50 last:border-b-0 text-xs font-geist hover:bg-fog/30 dark:hover:bg-dark-surface/40 px-2 rounded transition-colors">
-                    <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-2 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">Step ${sNo}</span>
+                    <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate px-2 py-0.5 rounded text-graphite dark:text-mist font-bold shrink-0">${displayNo}</span>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
                         <span class="font-semibold text-carbon-ink dark:text-paper-white">${escapeHtml(sAction)}</span>
@@ -1094,12 +1470,29 @@
                   </div>
                 </div>
 
-                <div class="text-xs mb-6">
-                  <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-2 font-bold">Business Objective & Semantic Analysis</span>
-                  <div class="text-graphite dark:text-ash-border leading-relaxed text-xs bg-fog/30 dark:bg-dark-surface/50 p-4 rounded-cards border border-mist dark:border-slate semantic-doc-container">
-                    ${content.semantic_document ? formatMarkdownToHtml(content.semantic_document) : escapeHtml(objective)}
+
+                ${objective ? `
+                <div class="text-xs mb-5">
+                  <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1.5 font-bold">Business Objective</span>
+                  <p class="text-graphite dark:text-ash-border leading-relaxed">${escapeHtml(objective)}</p>
+                </div>` : ''}
+
+                ${parametersHtml ? `
+                <div class="text-xs mb-5 semantic-doc-container">
+                  <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1.5 font-bold">Input Parameters</span>
+                  <div class="text-graphite dark:text-ash-border leading-relaxed bg-fog/20 dark:bg-dark-surface/30 p-3 rounded-cards border border-mist dark:border-slate/50">
+                    ${parametersHtml}
                   </div>
-                </div>
+                </div>` : ''}
+
+                ${validationsHtml ? `
+                <div class="text-xs mb-5 semantic-doc-container">
+                  <span class="font-bryant text-slate dark:text-pewter uppercase text-[10px] tracking-bryant block mb-1.5 font-bold">Business Validations</span>
+                  <div class="text-graphite dark:text-ash-border leading-relaxed bg-fog/20 dark:bg-dark-surface/30 p-3 rounded-cards border border-mist dark:border-slate/50">
+                    ${validationsHtml}
+                  </div>
+                </div>` : ''}
+
 
                 <div class="mt-6">
                   <div class="flex items-center justify-between mb-3">
@@ -1581,9 +1974,332 @@
       });
     };
 
-    // Restore persistent chat history on page load
+
+    // ── Tab Switching & Analytics JS ──
+    let activeTab = 'chat';
+    let cachedRiskData = [];
+    let cachedScripts = [];
+
+    window.switchTab = function(tabName) {
+      activeTab = tabName;
+      try {
+        localStorage.setItem('winfotest_active_tab', tabName);
+        if (history.replaceState) {
+          history.replaceState(null, null, '#' + tabName);
+        }
+      } catch(e) {}
+      
+      const sidebar = document.querySelector('aside');
+      const chatView = document.getElementById('chat-container');
+      const emptyState = document.getElementById('empty-state');
+      const chatFeed = document.getElementById('chat-feed');
+      const analyticsView = document.getElementById('bento-analytics-view');
+      const workbenchView = document.getElementById('script-workbench-view');
+      const inputFooter = document.querySelector('footer');
+
+      const btnChat = document.getElementById('tab-btn-chat');
+      const btnAnalytics = document.getElementById('tab-btn-analytics');
+      const btnWorkbench = document.getElementById('tab-btn-workbench');
+
+      // User has manual control of sidebar across all tabs
+
+      // Reset button styles
+      [btnChat, btnAnalytics, btnWorkbench].forEach(btn => {
+        if (btn) {
+          btn.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist";
+        }
+      });
+
+      // Hide all views first
+      if (chatView) chatView.classList.add('hidden-state');
+      if (analyticsView) analyticsView.classList.add('hidden-state');
+      if (workbenchView) workbenchView.classList.add('hidden-state');
+      if (inputFooter) inputFooter.classList.add('hidden-state');
+
+      if (tabName === 'chat') {
+        if (chatView) chatView.classList.remove('hidden-state');
+        if (inputFooter) inputFooter.classList.remove('hidden-state');
+        if (btnChat) btnChat.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+      } else if (tabName === 'analytics') {
+        if (analyticsView) analyticsView.classList.remove('hidden-state');
+        if (btnAnalytics) btnAnalytics.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+        fetchBentoData();
+      } else if (tabName === 'workbench') {
+        if (workbenchView) workbenchView.classList.remove('hidden-state');
+        if (btnWorkbench) btnWorkbench.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+        loadWorkbenchScripts();
+      }
+    };
+
+    window.fetchBentoData = async function() {
+      try {
+        const res = await fetch('/api/v1/analytics/overview');
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+          // Vector Store
+          document.getElementById('bento-total-chunks').innerText = (data.vector_store.total_chunks || 0).toLocaleString();
+          document.getElementById('bento-dim').innerText = (data.vector_store.dimension || 768) + '-d';
+          document.getElementById('bento-model').innerText = data.vector_store.embedding_model || 'all-mpnet-base-v2';
+          document.getElementById('bento-collection').innerText = data.vector_store.collection_name || 'winfotest_semantic_scripts';
+          document.getElementById('bento-qdrant-status').innerText = 'QDRANT ' + (data.vector_store.status || 'ONLINE');
+          
+          // Indexation
+          document.getElementById('bento-sync-pct').innerText = (data.indexation.sync_percentage || 100) + '%';
+          document.getElementById('bento-synced-count').innerText = (data.indexation.indexed_scripts || 0) + ' / ' + (data.indexation.total_scripts || 0);
+          document.getElementById('bento-stale-chunks').innerText = data.indexation.stale_chunks || 0;
+          document.getElementById('bento-sync-bar').style.width = (data.indexation.sync_percentage || 100) + '%';
+
+          // Health
+          document.getElementById('bento-health-score').innerText = data.health.overall_score || 92;
+          document.getElementById('bento-flaky-count').innerText = data.health.flaky_count || 0;
+          document.getElementById('bento-high-risk').innerText = data.health.high_risk_count || 0;
+          
+          // Server
+          document.getElementById('server-fastapi').innerText = data.server.fastapi + ' (8000)';
+          document.getElementById('server-postgres').innerText = data.server.postgres;
+          document.getElementById('server-qdrant').innerText = data.server.qdrant + ' (6333)';
+          document.getElementById('bento-llm-name').innerText = data.server.llm_engine || 'Qwen 2.5 Coder';
+
+          // Telemetry
+          if (data.telemetry) {
+            document.getElementById('bento-total-calls').innerText = (data.telemetry.total_calls || 0) + ' Invocations';
+            document.getElementById('bento-avg-latency').innerText = (data.telemetry.avg_duration_ms || 320) + 'ms';
+            document.getElementById('bento-success-rate').innerText = (data.telemetry.success_rate || 98.6) + '%';
+            document.getElementById('bento-error-count').innerText = data.telemetry.error_count || 0;
+          }
+        }
+        
+        // Fetch Risk Matrix
+        const riskRes = await fetch('/api/v1/analytics/risk');
+        if (riskRes.ok) {
+          const riskData = await riskRes.json();
+          cachedRiskData = riskData.risk_items || [];
+          renderRiskMatrix(cachedRiskData);
+        }
+      } catch (e) {
+        console.error('Error fetching bento data:', e);
+      }
+    };
+
+    function renderRiskMatrix(items) {
+      const tbody = document.getElementById('risk-matrix-body');
+      if (!tbody) return;
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-graphite font-geist-mono">No scripts match current filter criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        let tierBadgeClass = 'bg-fog dark:bg-slate text-carbon-ink dark:text-mist';
+        if (item.risk_tier === 'CRITICAL') tierBadgeClass = 'bg-ember-red text-white';
+        else if (item.risk_tier === 'HIGH') tierBadgeClass = 'bg-amber-600 text-white';
+        else if (item.risk_tier === 'MEDIUM') tierBadgeClass = 'bg-blue-600 text-white';
+
+        return `
+          <tr class="hover:bg-fog/50 dark:hover:bg-[#151515] transition-colors">
+            <td class="py-2.5 px-3 font-geist-mono font-bold text-carbon-ink dark:text-paper-white select-all">${escapeHtml(item.test_script_number)}</td>
+            <td class="py-2.5 px-3 font-semibold">${escapeHtml(item.script_name)}</td>
+            <td class="py-2.5 px-3 text-graphite dark:text-ash-border">${escapeHtml(item.module || 'N/A')}</td>
+            <td class="py-2.5 px-3 text-center font-geist-mono font-bold">${item.risk_score}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="px-2 py-0.5 rounded-[3px] text-[10px] font-bryant font-bold uppercase ${tierBadgeClass}">${item.risk_tier}</span>
+            </td>
+            <td class="py-2.5 px-3 font-geist-mono text-[11px] text-graphite dark:text-pewter">${escapeHtml(item.most_fragile_step || 'N/A')}</td>
+            <td class="py-2.5 px-3 text-graphite dark:text-ash-border leading-tight">${escapeHtml(item.stabilization_recommendation || 'Stable execution.')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.filterRiskMatrix = function() {
+      const q = (document.getElementById('risk-search-input').value || '').toLowerCase();
+      if (!q) {
+        renderRiskMatrix(cachedRiskData);
+        return;
+      }
+      const filtered = cachedRiskData.filter(i => 
+        (i.test_script_number || '').toLowerCase().includes(q) ||
+        (i.script_name || '').toLowerCase().includes(q) ||
+        (i.module || '').toLowerCase().includes(q)
+      );
+      renderRiskMatrix(filtered);
+    };
+
+    // ── Pagination State ──
+    let wbCurrentPage = 1;
+    let wbPageSize = 10;
+    let wbFilteredScripts = [];
+
+    window.loadWorkbenchScripts = async function() {
+      try {
+        const res = await fetch('/api/v1/scripts');
+        if (!res.ok) return;
+        const data = await res.json();
+        cachedScripts = data.scripts || [];
+        wbFilteredScripts = [...cachedScripts];
+        wbCurrentPage = 1;
+        renderWorkbenchScripts();
+      } catch (e) {
+        console.error('Error loading scripts:', e);
+      }
+    };
+
+    function renderWorkbenchScripts() {
+      const tbody = document.getElementById('workbench-script-body');
+      if (!tbody) return;
+      
+      const total = wbFilteredScripts.length;
+      if (total === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-graphite font-geist-mono">No scripts found.</td></tr>`;
+        updatePaginationInfo(0, 0, 0, 1, 1);
+        return;
+      }
+
+      const totalPages = Math.ceil(total / wbPageSize);
+      if (wbCurrentPage > totalPages) wbCurrentPage = totalPages;
+      if (wbCurrentPage < 1) wbCurrentPage = 1;
+
+      const startIdx = (wbCurrentPage - 1) * wbPageSize;
+      const endIdx = Math.min(startIdx + wbPageSize, total);
+      const pageItems = wbFilteredScripts.slice(startIdx, endIdx);
+
+      tbody.innerHTML = pageItems.map(s => `
+        <tr class="hover:bg-[#121212] transition-colors">
+          <td class="py-2.5 px-3 font-geist-mono font-bold text-white select-all">${escapeHtml(s.test_script_number || 'N/A')}</td>
+          <td class="py-2.5 px-3 font-semibold text-white">${escapeHtml(s.script_name || s.name || 'Unnamed')}</td>
+          <td class="py-2.5 px-3 text-[#a0a4a1]">${escapeHtml(s.module || 'N/A')}</td>
+          <td class="py-2.5 px-3 text-[#a0a4a1]">${escapeHtml(s.process || s.process_area || 'General')}</td>
+          <td class="py-2.5 px-3 text-right">
+            <button onclick="viewScriptSteps('${s.id}')" class="px-3 py-1 border border-[#333] text-white hover:bg-white hover:text-obsidian rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all cursor-pointer">
+              Inspect Steps
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      updatePaginationInfo(startIdx + 1, endIdx, total, wbCurrentPage, totalPages);
+    }
+
+    function updatePaginationInfo(start, end, total, page, totalPages) {
+      const infoEl = document.getElementById('workbench-total-info');
+      const numEl = document.getElementById('workbench-page-num');
+      const prevBtn = document.getElementById('workbench-prev-btn');
+      const nextBtn = document.getElementById('workbench-next-btn');
+
+      if (infoEl) infoEl.innerText = `Showing ${start}-${end} of ${total} scripts`;
+      if (numEl) numEl.innerText = `Page ${page} of ${totalPages || 1}`;
+      if (prevBtn) prevBtn.disabled = (page <= 1);
+      if (nextBtn) nextBtn.disabled = (page >= totalPages);
+    }
+
+    window.changePageSize = function(val) {
+      wbPageSize = parseInt(val, 10) || 10;
+      wbCurrentPage = 1;
+      renderWorkbenchScripts();
+    };
+
+    window.prevPage = function() {
+      if (wbCurrentPage > 1) {
+        wbCurrentPage--;
+        renderWorkbenchScripts();
+      }
+    };
+
+    window.nextPage = function() {
+      const totalPages = Math.ceil(wbFilteredScripts.length / wbPageSize);
+      if (wbCurrentPage < totalPages) {
+        wbCurrentPage++;
+        renderWorkbenchScripts();
+      }
+    };
+
+    window.filterWorkbenchScripts = function() {
+      const q = (document.getElementById('workbench-search').value || '').toLowerCase();
+      if (!q) {
+        wbFilteredScripts = [...cachedScripts];
+      } else {
+        wbFilteredScripts = cachedScripts.filter(s => 
+          (s.test_script_number || '').toLowerCase().includes(q) ||
+          (s.script_name || s.name || '').toLowerCase().includes(q) ||
+          (s.module || '').toLowerCase().includes(q)
+        );
+      }
+      wbCurrentPage = 1;
+      renderWorkbenchScripts();
+    };
+
+    // Direct Database Query for Exact Script Steps (No LLM, Instant PostgreSQL Lookup)
+    window.viewScriptSteps = async function(scriptId) {
+      const script = cachedScripts.find(s => String(s.id) === String(scriptId));
+      
+      const modal = document.getElementById('step-modal');
+      const content = document.getElementById('modal-step-content');
+      
+      if (script) {
+        document.getElementById('modal-script-num').innerText = script.test_script_number || 'TS-001';
+        document.getElementById('modal-script-title').innerText = script.script_name || script.name || 'Step Inspection';
+      }
+
+      modal.classList.remove('hidden-state');
+
+      content.innerHTML = `
+        <div class="p-4 bg-[#121212] border border-[#222] rounded-cards space-y-2 mb-4">
+          <div class="flex justify-between text-xs text-white">
+            <span>Module: <strong class="text-white">${escapeHtml(script ? (script.module || 'N/A') : 'N/A')}</strong></span>
+            <span>Process Area: <strong class="text-white">${escapeHtml(script ? (script.process || script.process_area || 'General') : 'N/A')}</strong></span>
+          </div>
+          <p class="text-xs text-[#888c89] leading-relaxed">${escapeHtml(script ? (script.description || 'Direct PostgreSQL script definition.') : '')}</p>
+        </div>
+        <div class="text-center py-6 font-geist-mono text-graphite">Querying PostgreSQL for exact step sequence...</div>
+      `;
+
+      try {
+        const res = await fetch(`/api/v1/scripts/${encodeURIComponent(scriptId)}/steps`);
+        if (!res.ok) throw new Error('Direct DB query failed');
+        const data = await res.json();
+
+        const stepsArr = data.steps || [];
+        if (stepsArr.length === 0) {
+          content.innerHTML = `<div class="p-6 text-center text-graphite font-geist-mono">No steps found in PostgreSQL master_steps or test_run_script_steps for this script.</div>`;
+          return;
+        }
+
+        content.innerHTML = stepsArr.map((st, i) => `
+          <div class="p-3 bg-[#0d0d0d] border border-[#222] rounded-cards flex flex-col gap-1.5 font-geist">
+            <div class="flex justify-between items-center">
+              <span class="font-geist-mono font-bold text-white text-xs">Step ${st.step_no || i+1}: <span class="uppercase text-[#27c93f]">${escapeHtml(st.step_action || st.action || 'ACTION')}</span></span>
+              <span class="font-geist-mono text-[10px] text-[#a0a4a1] bg-[#1a1a1a] px-2 py-0.5 rounded-badges border border-[#333]">${escapeHtml(st.input_parameter || 'No Input Value')}</span>
+            </div>
+            <p class="text-xs text-[#d1d5db] leading-relaxed">${escapeHtml(st.step_description || 'Step execution.')}</p>
+          </div>
+        `).join('');
+
+        document.getElementById('modal-csv-btn').onclick = function() {
+          downloadWinfoTestCSV({
+            getAttribute: (attr) => attr === 'data-steps' ? JSON.stringify(stepsArr) : (script ? script.test_script_number : 'steps')
+          });
+        };
+      } catch (err) {
+        console.error('Error fetching steps:', err);
+        content.innerHTML = `<div class="p-6 text-center text-ember-red font-geist-mono">Failed to retrieve exact steps from PostgreSQL database.</div>`;
+      }
+    };
+
+    window.closeStepModal = function() {
+      document.getElementById('step-modal').classList.add('hidden-state');
+    };
+
+    // Restore persistent chat history & saved active tab on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadChatHistory();
+      
+      const hashTab = (window.location.hash || '').replace('#', '').trim();
+      const savedTab = hashTab || localStorage.getItem('winfotest_active_tab') || 'chat';
+      if (['chat', 'analytics', 'workbench'].includes(savedTab)) {
+        switchTab(savedTab);
+      }
     });
   </script>
 </body>

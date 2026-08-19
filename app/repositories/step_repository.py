@@ -1,23 +1,57 @@
-# STREAMING_CHUNK:Initializing direct test_run_script_steps repository...
+"""
+Test Step Repository
+====================
+
+This module manages retrieval of the granular, ordered UI actions (steps) that make up a test script.
+
+Key Responsibilities:
+  1. Cascade Retrieval: Attempts to load canonical steps from `master_steps`. If none exist,
+     it falls back to loading steps from the most recently executed `test_run_scripts`.
+  2. Step Deduplication: Ensures that identical steps (by step number and description) are
+     not accidentally duplicated when parsing legacy DB schemas.
+"""
+
 import logging
 from typing import Any, Dict, List
 from sqlalchemy import text
 from app.core.config import settings
 from app.repositories.db import engine
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 
+# ── class definition ──────────────────────────────────────────────────
 class StepRepository:
+    """
+    Data Access Object (DAO) for interacting with granular test step records.
+    """
+
+    # ── public repository methods ───────────────────────────────────────
     def get_ordered_steps(self, script_id: str) -> List[Dict[str, Any]]:
-        """Retrieves ordered steps directly from master_steps or test_run_script_steps."""
+        """
+        Retrieves ordered steps directly from `master_steps` or `test_run_script_steps`.
+        
+        Args:
+            script_id (str): The primary key ID of the parent test script.
+            
+        Returns:
+            List[Dict]: An ordered list of dictionaries representing individual test steps.
+        """
         try:
             with engine.connect() as conn:
+                import uuid as _uuid
+                # If script_id looks like a UUID, use it directly
+                # Only do a get_by_id lookup if it looks like a script number / name (not UUID)
                 resolved_id = str(script_id)
-                from app.repositories.test_script_repository import test_script_repository
-                script = test_script_repository.get_by_id(script_id)
-                if script:
-                    resolved_id = str(script.get("test_script_id") or script.get("id") or script_id)
+                try:
+                    _uuid.UUID(resolved_id)  # Will raise ValueError if not a valid UUID
+                except (ValueError, AttributeError):
+                    # Not a UUID, resolve via repository
+                    from app.repositories.test_script_repository import test_script_repository
+                    script = test_script_repository.get_by_id(script_id)
+                    if script:
+                        resolved_id = str(script.get("test_script_id") or script.get("id") or script_id)
 
                 # 1. Try master_steps first (directly linked via script_id)
                 try:
@@ -29,6 +63,7 @@ class StepRepository:
                     """
                     result = conn.execute(text(master_query), {"script_id": resolved_id})
                     rows = result.mappings().all()
+                    
                     if rows:
                         seen = set()
                         unique_steps = []
@@ -56,6 +91,7 @@ class StepRepository:
                     """
                     result = conn.execute(text(run_query), {"script_id": resolved_id})
                     rows = result.mappings().all()
+                    
                     seen = set()
                     unique_steps = []
                     for r in rows:
@@ -68,9 +104,11 @@ class StepRepository:
                 except Exception as e:
                     logger.debug("test_run_script_steps lookup failed: %s", e)
                     return []
+                    
         except Exception as exc:
             logger.error("Querying steps failed for script_id %s: %s", script_id, exc)
             return []
 
 
+# ── singleton export ──────────────────────────────────────────────────
 step_repository = StepRepository()

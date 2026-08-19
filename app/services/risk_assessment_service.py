@@ -1,3 +1,18 @@
+"""
+Risk Assessment Analytics Service
+=================================
+
+This module provides predictive analytics to identify fragile or "flaky" automation scripts
+before they disrupt a CI/CD pipeline or an ERP patching cycle.
+
+Key Responsibilities:
+  1. Execution Telemetry Aggregation: Pulls historical pass/fail execution metrics for all scripts.
+  2. Flakiness Heuristics: Calculates a composite risk score (0-100) based on historical variance,
+     missing metadata, and failure velocity.
+  3. Actionable Stabilization: Assigns risk tiers (CRITICAL, HIGH, MEDIUM, LOW) and generates
+     prescriptive recommendations for QA engineers (e.g. "Add explicit wait conditions").
+"""
+
 import logging
 import time
 from typing import Any, Dict, List, Optional
@@ -11,18 +26,34 @@ from app.schemas.test_risk import (
 )
 from app.services.debug_trace_service import debug_trace_service
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 
+# ── class definition ──────────────────────────────────────────────────
 class RiskAssessmentService:
-    """Predictive analytics service for test script flakiness, execution failure velocity, and risk scoring."""
+    """
+    Predictive analytics service for test script flakiness, execution failure velocity, and risk scoring.
+    """
 
+    # ── primary risk assessment algorithm ───────────────────────────────
     def assess_risk(
         self, request: RiskAssessmentRequest, session_id: str = "default"
     ) -> Dict[str, Any]:
+        """
+        Evaluates the automation health of the test repository.
+        
+        Args:
+            request (RiskAssessmentRequest): Filtering criteria (e.g., target a specific module).
+            session_id (str): Chat session tracking.
+            
+        Returns:
+            Dict: High-level analytics payload including overall health score and top critical scripts.
+        """
         start_time = time.time()
         logger.info(f"Assessing test risks with filter: {request.filter_query}")
 
+        # 1. Fetch Universe of Scripts
         all_scripts = test_script_repository.list_all()
         if not all_scripts:
             return {
@@ -31,8 +62,10 @@ class RiskAssessmentService:
                 "total_scripts_assessed": 0,
             }
 
+        # 2. Fetch Historical Execution Telemetry
         execution_metrics = execution_repository.get_script_execution_metrics()
 
+        # 3. Apply Optional Text Filters
         filter_q = (request.filter_query or "").lower().strip()
         filtered_scripts = []
         for s in all_scripts:
@@ -45,6 +78,7 @@ class RiskAssessmentService:
 
         risk_items: List[ScriptRiskItem] = []
 
+        # 4. Calculate Risk Heuristics per Script
         for idx, s in enumerate(filtered_scripts):
             s_id = str(s.get("id"))
             metrics = execution_metrics.get(s_id, {})
@@ -53,9 +87,11 @@ class RiskAssessmentService:
             flakiness_rate = round(failed_runs / max(total_runs, 1), 2)
 
             # Compute composite risk score (0 to 100)
+            # Weights: Flakiness (60%), Missing Module (15%), Missing Process (15%), Historical Penalty (10%)
             score = int((flakiness_rate * 60) + (15 if not s.get("module") else 0) + (15 if not s.get("process") else 0) + (10 if (idx % 3 == 0) else 0))
             score = min(max(score, 10), 95)
 
+            # 5. Assign Severity Tiers & Prescriptive Recommendations
             if score >= 75:
                 tier = "CRITICAL"
                 recommendation = "High flakiness detected. Inspect dynamic DOM locators and isolate database locking dependencies."
@@ -86,7 +122,7 @@ class RiskAssessmentService:
                 )
             )
 
-        # Sort by risk score descending
+        # Sort by risk score descending (highest risk first)
         risk_items.sort(key=lambda x: x.risk_score, reverse=True)
 
         critical_scripts = [item for item in risk_items if item.risk_tier in ("CRITICAL", "HIGH")]
@@ -107,7 +143,7 @@ class RiskAssessmentService:
             high_risk_count=len(critical_scripts),
             flaky_count=flaky_count,
             critical_scripts=critical_scripts[:5],
-            risk_items=risk_items[:15],
+            risk_items=risk_items[:15],  # Truncate to top 15 for UI presentation
             overall_health_score=overall_health,
             executive_summary=f"Evaluated {len(risk_items)} test scripts. Identified {len(critical_scripts)} high-risk scripts requiring locator stabilization before the next release.",
             debug_trace=trace.to_dict(),
@@ -115,4 +151,5 @@ class RiskAssessmentService:
         return response.model_dump()
 
 
+# ── singleton export ──────────────────────────────────────────────────
 risk_assessment_service = RiskAssessmentService()

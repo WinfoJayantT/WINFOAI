@@ -26,3 +26,8 @@ requests.http
 Data for project/
 Data for project/*
 
+# Cloned reference codebase
+winfotest2.0CDB/
+
+# Testing and scratch code directory
+testingcode/
