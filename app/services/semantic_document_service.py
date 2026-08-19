@@ -1,3 +1,23 @@
+"""
+Semantic Document Generation Service
+====================================
+
+This module bridges the gap between raw database automation scripts and natural language 
+by generating rich, human-readable "Semantic Documents".
+
+These documents are crucial for two reasons:
+  1. Vector Search Indexing: They provide a dense narrative block of text that `all-mpnet-base-v2`
+     can accurately embed for highly semantic search results.
+  2. UI Presentation: They are streamed to the WinfoTest UI so non-technical users
+     (like business analysts) can immediately understand what a complex technical script does.
+
+Key Capabilities:
+  - MBP Mapping: Cross-references a script's module against `oracle_mbp_mappings.json` to 
+    tag it with standard Oracle Modern Best Practice hierarchies (e.g. Procure to Pay).
+  - Dual Generation modes: Uses the LLM for deep contextual generation by default, falling
+    back to a deterministic string formatter (`generate_local_semantic_document`) if the LLM is down.
+"""
+
 import logging
 import json
 import os
@@ -5,10 +25,12 @@ from typing import Dict, Any, List, Optional
 from app.clients.llm_client import llm_client
 from app.core.config import settings
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 NOT_SPECIFIED = "Not specified in source data"
 
+# ── prompt engineering ──────────────────────────────────────────────────
 SEMANTIC_DOCUMENT_SYSTEM_PROMPT = """You are an Enterprise ERP QA & Semantic Test Analysis Expert specializing in Oracle Fusion Cloud Applications.
 Your task is to analyze a raw test script (including qualified name, metadata, and ordered UI/API steps) and produce an exhaustive, structured 'Semantic Document'.
 
@@ -25,12 +47,19 @@ Only state a Process Area, Process, Module, or Role if provided in the context; 
 """
 
 
+# ── class definition ──────────────────────────────────────────────────
 class SemanticDocumentService:
+    """
+    Transforms raw database step records into narrative Markdown documents for vector indexing
+    and user-facing explanations.
+    """
+
     def __init__(self, client=None):
         self.client = client or llm_client
         self._mbp_mappings = self._load_mbp_mappings()
         
     def _load_mbp_mappings(self) -> List[Dict[str, Any]]:
+        """Loads static mapping of Winfo modules to standard Oracle Modern Best Practices."""
         try:
             config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'oracle_mbp_mappings.json')
             with open(config_path, 'r') as f:
@@ -40,6 +69,7 @@ class SemanticDocumentService:
             return []
 
     def _is_valid_semantic_document(self, text: Optional[str]) -> bool:
+        """Heuristically checks if the LLM followed the strict 5-section markdown structure."""
         if not text or len(text.strip()) < 100:
             return False
         clean = text.lower()
@@ -53,11 +83,25 @@ class SemanticDocumentService:
         matches = sum(1 for m in required_markers if m in clean)
         return matches >= 3
 
+    # ── llm generation ──────────────────────────────────────────────────
     def generate_semantic_document(
         self, script_data: Dict[str, Any], steps: List[Dict[str, Any]]
     ) -> str:
+        """
+        Invokes the configured LLM to generate a deep-context narrative document.
+        
+        Args:
+            script_data (Dict): Raw row from test_scripts table.
+            steps (List): Raw rows from master_steps table.
+            
+        Returns:
+            str: 5-section Markdown text.
+            
+        Raises:
+            ValueError: If the LLM goes off-rails and ignores the schema constraints.
+        """
         formatted_steps = []
-        for step in steps[:30]:
+        for step in steps[:30]:  # Limit to 30 steps to prevent prompt explosion
             seq = step.get("step_sequence", step.get("step_no", "?"))
             action = step.get("step_action", step.get("action", ""))
             desc = step.get("step_description", step.get("step_name", ""))
@@ -105,10 +149,14 @@ Ordered Workflow Steps:
             logger.error(f"LLM API call encountered an error: {e}")
             raise
 
+    # ── local generation fallback ───────────────────────────────────────
     def generate_local_semantic_document(
         self, script_data: Dict[str, Any], steps: List[Dict[str, Any]]
     ) -> str:
-        """Deterministically formats the 5-section semantic document from actual DB metadata and steps."""
+        """
+        Deterministically formats the 5-section semantic document natively in Python 
+        without invoking the LLM. Used as an ultra-fast fallback or for batch processing.
+        """
         formatted_steps = []
         for step in steps[:30]:
             seq = step.get("step_sequence", step.get("step_no", "?"))
@@ -157,18 +205,32 @@ Ordered Workflow Steps:
 """
         return doc.strip()
 
+    # ── caching entrypoint ──────────────────────────────────────────────
     def get_or_create_semantic_document(
         self, script_data: Dict[str, Any], steps: List[Dict[str, Any]], only_allow_cache: bool = False
     ) -> str:
+        """
+        Retrieves a pre-computed document from PostgreSQL if it exists, otherwise generates it
+        and saves it back to the database.
+        
+        Args:
+            script_data (Dict): The test_scripts row.
+            steps (List): The master_steps rows.
+            only_allow_cache (bool): If True, falls back to local string formatting instead of LLM generation
+                                     if not in cache (used for fast bulk search responses).
+        """
         script_id = script_data.get("id")
         if not script_id:
             raise ValueError("Script ID is required to fetch or create a semantic document.")
             
         from app.repositories.index_repository import index_repository
+        
+        # 1. Check DB Cache
         cached = index_repository.get_semantic_document(script_id)
         if cached and cached.get("semantic_document"):
             return cached.get("semantic_document")
 
+        # 2. Try LLM Generation
         if settings.is_llm_configured and not only_allow_cache:
             try:
                 doc = self.generate_semantic_document(script_data, steps)
@@ -180,6 +242,8 @@ Ordered Workflow Steps:
                 index_repository.record_semantic_document(script_id, doc, "pg_schema")
                 return doc
 
+        # 3. Fallback to ultra-fast native generation
         return self.generate_local_semantic_document(script_data, steps)
 
+# ── singleton export ──────────────────────────────────────────────────
 semantic_document_service = SemanticDocumentService()

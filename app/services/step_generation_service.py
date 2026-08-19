@@ -1,6 +1,7 @@
 """
 StepGenerationService (Dynamic Semantic Generation)
 ===================================================
+
 Accepts a business scenario description + process area and dynamically
 generates the complete WinfoTest UI automation step sequence:
 
@@ -19,7 +20,7 @@ generates the complete WinfoTest UI automation step sequence:
 import json
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import text
 
@@ -27,9 +28,11 @@ from app.clients.llm_client import llm_client
 from app.core.config import settings
 from app.repositories.db import engine
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
-# --- Standard WinfoTest Oracle ERP action primitives ---
+# ── static primitives ───────────────────────────────────────────────────
+# Standard WinfoTest Oracle ERP action primitives
 VALID_ACTIONS = [
     "Navigate",
     "Click Button",
@@ -43,7 +46,7 @@ VALID_ACTIONS = [
     "Verify",
 ]
 
-# --- Dynamic Few-Shot System Prompt ---
+# ── dynamic few-shot system prompt ──────────────────────────────────────
 _SYSTEM_PROMPT = """You are an Oracle ERP test automation engineer for WinfoTest.
 Given a business scenario and reference workflow steps from similar tests in the database, generate the realistic, complete end-to-end sequence of WinfoTest UI automation steps.
 
@@ -78,10 +81,13 @@ RULES:
 5. Return ONLY the pipe-delimited step lines. No markdown fences, no JSON, no explanations."""
 
 
+# ── class definition ──────────────────────────────────────────────────
 class StepGenerationService:
-    # ──────────────────────────────────────────────────────────────────────────
-    # Public entry point
-    # ──────────────────────────────────────────────────────────────────────────
+    """
+    Orchestrates the vector retrieval and LLM prompt generation for creating new test scripts.
+    """
+
+    # ── public entry point ──────────────────────────────────────────────
     def generate_steps(
         self,
         scenario: str,
@@ -92,6 +98,15 @@ class StepGenerationService:
         """
         Dynamically generates WinfoTest steps for *scenario* using vector few-shot
         RAG grounded in PostgreSQL master_steps, with optional test_data variable binding.
+        
+        Args:
+            scenario (str): Natural language description of the test to generate.
+            process_area (str): Oracle module or process area grouping.
+            test_data (Dict): Pre-defined variables to bind (e.g., {"Supplier_Name": "Acme"}).
+            limit (int): Number of reference scripts to retrieve for RAG context.
+            
+        Returns:
+            Dict: Contains generated steps, CSV payload, and reasoning summary.
         """
         logger.info(
             "Generating steps dynamically | scenario='%s' process_area='%s' test_data_keys=%s",
@@ -155,9 +170,10 @@ class StepGenerationService:
             "reasoning": reasoning,
         }
 
+    # ── csv export formatting ───────────────────────────────────────────
     def export_steps_to_csv(self, steps: List[Dict[str, Any]]) -> str:
         """
-        Exports generated steps to 100% WinfoTest-compliant CSV format.
+        Exports generated JSON steps to a 100% WinfoTest-compliant CSV format string.
         """
         import csv
         import io
@@ -200,6 +216,14 @@ class StepGenerationService:
         """
         Retrieves the top semantically similar test script using Qdrant dense vector
         search, then reloads its authentic steps from PostgreSQL master_steps.
+        
+        Args:
+            scenario: The core test description.
+            process_area: Module filter.
+            limit: How many examples to fetch.
+            
+        Returns:
+            Tuple containing the List of examples and List of source script IDs.
         """
         examples: List[Dict] = []
         source_ids: List[str] = []
@@ -247,10 +271,14 @@ class StepGenerationService:
 
         return examples, source_ids
 
+    # ── sql step fetching ───────────────────────────────────────────────
     def _fetch_steps_for_script(
         self, conn, script_id: str
     ) -> List[Dict[str, Any]]:
-        """Try master_steps, then fall back to test_run_script_steps."""
+        """
+        Try to pull steps from `master_steps`, then fall back to `test_run_script_steps`.
+        Uses raw SQLAlchemy queries for speed and exact ordering.
+        """
         try:
             result = conn.execute(
                 text("""
@@ -299,6 +327,9 @@ class StepGenerationService:
         examples: List[Dict],
         test_data: Optional[Dict[str, Any]] = None,
     ) -> str:
+        """
+        Constructs the final prompt combining the few-shot examples and user context.
+        """
         parts: List[str] = []
 
         if examples:
@@ -398,6 +429,7 @@ class StepGenerationService:
                         if isinstance(item, dict):
                             act = item.get("action", "Navigate")
                             matched_action = act if act in VALID_ACTIONS else "Navigate"
+                            
                             p_val = str(item.get("input_parameter", "")).strip()
                             if p_val and not p_val.startswith("{{") and re.match(r"^[a-zA-Z0-9_]+$", p_val):
                                 p_val = f"{{{{{p_val}}}}}"
@@ -505,4 +537,5 @@ class StepGenerationService:
         return final_steps
 
 
+# ── singleton export ──────────────────────────────────────────────────
 step_generation_service = StepGenerationService()

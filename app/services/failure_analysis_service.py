@@ -1,3 +1,17 @@
+"""
+Failure Analysis & Self-Healing Service
+=======================================
+
+This module is responsible for analyzing raw Playwright execution logs and DOM snapshots
+to diagnose test failures and synthesize resilient locator repairs.
+
+Core Capabilities:
+  1. Root Cause Analysis: Translates complex stack traces (TimeoutError, TargetClosed)
+     into plain English explanations for QA engineers.
+  2. Locator Self-Healing: Analyzes DOM snapshots associated with a broken step to generate
+     resilient XPaths or CSS Selectors that avoid dynamic ERP framework IDs (like Oracle ADF `pt1:_FOr1`).
+"""
+
 import json
 import logging
 import re
@@ -14,8 +28,10 @@ from app.schemas.failure_analysis import (
 from app.core.config import settings
 from app.services.debug_trace_service import debug_trace_service
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
+# ── prompt engineering ──────────────────────────────────────────────────
 FAILURE_ANALYSIS_SYSTEM_PROMPT = """You are an Enterprise QA Automation Expert specializing in Playwright, Selenium, and ERP Systems (Oracle Fusion, SAP).
 Analyze the provided test failure log and DOM snapshot.
 Determine the root cause of the failure and suggest a precise code fix (e.g., updating a locator, waiting for network idle, etc.).
@@ -41,13 +57,30 @@ Output strict JSON only.
 """
 
 
+# ── class definition ──────────────────────────────────────────────────
 class FailureAnalysisService:
+    """
+    Service for diagnosing test execution failures and generating self-healing locators.
+    """
+
     def __init__(self, client=None):
         self.llm_client = client or llm_client
 
+    # ── root cause analysis ─────────────────────────────────────────────
     def analyze_failure(
         self, error_log: str, dom_snapshot: str = None, script_name: str = None
     ) -> Dict[str, Any]:
+        """
+        Diagnoses a test failure log by consulting the LLM.
+        
+        Args:
+            error_log (str): The raw exception string or stack trace.
+            dom_snapshot (str): Optional HTML DOM state at the time of failure.
+            script_name (str): The identifier of the failing script.
+            
+        Returns:
+            Dict: Contains plain English explanation, suggested fix, and confidence score.
+        """
         start_time = time.time()
         logger.info("Analyzing Playwright failure log...")
 
@@ -60,6 +93,7 @@ class FailureAnalysisService:
             f"Script Name: {script_name or 'Unknown'}\n\nERROR LOG:\n{error_log}\n"
         )
         if dom_snapshot:
+            # Truncate DOM snapshot to prevent token exhaustion
             truncated_dom = (
                 dom_snapshot[:8000] + "...(truncated)"
                 if len(dom_snapshot) > 8000
@@ -77,6 +111,7 @@ class FailureAnalysisService:
                 model=model_to_use,
             )
             
+            # Safely parse JSON payload from LLM output
             clean = raw.strip() if isinstance(raw, str) else str(raw)
             if "```" in clean:
                 m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", clean, re.DOTALL)
@@ -115,9 +150,20 @@ class FailureAnalysisService:
                 "debug_trace": None,
             }
 
+    # ── self-healing locator generation ─────────────────────────────────
     def recommend_locator_repairs(
         self, script_name: Optional[str] = None, error_log: Optional[str] = None
     ) -> Dict[str, Any]:
+        """
+        Pulls failing step DOM state from the database and synthesizes resilient locators.
+        
+        Args:
+            script_name (str): Target script identifier to fetch failure logs for.
+            error_log (str): Optional override error log.
+            
+        Returns:
+            Dict: Payload of `SelfHealingLocatorSuggestion` objects.
+        """
         start_time = time.time()
         logger.info(f"Generating self-healing locator recommendations for: {script_name}")
 
@@ -133,6 +179,7 @@ class FailureAnalysisService:
 
         if step_locators:
             for item in step_locators:
+                # Target explicitly failing steps or steps flagged with bad locators
                 if item.get("status") == "FAILED" or item.get("locator_code"):
                     broken_loc = item.get("locator_code") or "//input[@id='pt1:_FOr1:1:_FOSritemNode_payables_payables_invoices']"
                     user_prompt = f"Step Action: {item.get('step_action')}\nBroken Locator: {broken_loc}\nError: {item.get('error_message') or error_log or 'Element not attached to DOM'}"
@@ -149,13 +196,17 @@ class FailureAnalysisService:
                             model=model_to_use,
                         )
                         clean_loc = raw_llm.strip() if isinstance(raw_llm, str) else str(raw_llm)
+                        
+                        # Strip markdown blocks if present
                         if "```" in clean_loc:
                             m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", clean_loc, re.DOTALL)
                             clean_loc = m.group(1) if m else re.sub(r"```[a-z]*", "", clean_loc).strip()
                         m_obj = re.search(r"\{.*\}", clean_loc, re.DOTALL)
                         if m_obj:
                             clean_loc = m_obj.group(0)
+                            
                         res = json.loads(clean_loc) if clean_loc else {}
+                        
                         locator_repairs.append(
                             SelfHealingLocatorSuggestion(
                                 step_no=item.get("step_no", 1),
@@ -257,4 +308,5 @@ class FailureAnalysisService:
         return response.model_dump()
 
 
+# ── singleton export ──────────────────────────────────────────────────
 failure_analysis_service = FailureAnalysisService()

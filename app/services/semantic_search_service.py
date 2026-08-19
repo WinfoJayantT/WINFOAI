@@ -1,4 +1,19 @@
-# STREAMING_CHUNK:Initializing semantic search service with strict vector-grounded matching...
+"""
+Semantic Search Service
+=======================
+
+This module implements the primary search engine for finding existing WinfoTest scripts.
+It uses a highly tuned Hybrid Retrieval architecture that combines the strengths of 
+both modern LLM-based vector similarity and traditional database keyword matching.
+
+Key Responsibilities:
+  1. Dense Vector Search (Qdrant): Finds scripts using semantic meaning (e.g., "Procure to Pay" matches "P2P").
+  2. Keyword Matching (PostgreSQL): Identifies exact overlaps of tokenized test script names and numbers.
+  3. Hybrid Scoring: Merges the scores, boosting scripts that match both semantically and literally.
+  4. Entity Rehydration: Resolves final search IDs directly against the PostgreSQL source of truth
+     before returning payloads to the user interface.
+"""
+
 import logging
 import time
 from typing import Any, Dict, List, Optional
@@ -12,10 +27,17 @@ from app.repositories.step_repository import step_repository
 from app.services.semantic_document_service import semantic_document_service
 from app.services.debug_trace_service import debug_trace_service
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 
+# ── class definition ──────────────────────────────────────────────────
 class SemanticSearchService:
+    """
+    Executes hybrid (Vector + Keyword) search queries against the test script inventory.
+    """
+
+    # ── primary search implementation ───────────────────────────────────
     def search(
         self,
         query: str,
@@ -23,6 +45,18 @@ class SemanticSearchService:
         include_steps: bool = False,
         filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """
+        Executes a dual-pipeline semantic search.
+        
+        Args:
+            query (str): The natural language search query.
+            limit (int): The max number of top results to return.
+            include_steps (bool): Whether to hydrate all steps for the top results.
+            filters (Dict): Optional Qdrant `FieldCondition` filters (e.g. strict module matching).
+            
+        Returns:
+            Dict: Result payload containing the top N matched scripts and their rehydrated database records.
+        """
         logger.info(f"Performing strict semantic vector search for query: '{query}', filters: {filters}")
         
         start_time = time.perf_counter()
@@ -39,7 +73,7 @@ class SemanticSearchService:
         results = []
 
         try:
-            # Compile Qdrant Filter conditions if filters are present
+            # 1. Compile Qdrant Filter conditions if filters are present
             qdrant_filter = None
             if filters:
                 conditions = []
@@ -60,7 +94,7 @@ class SemanticSearchService:
                 if conditions:
                     qdrant_filter = qdrant_models.Filter(must=conditions)
 
-            # 1. Dense Vector Search (from Qdrant Index)
+            # 2. Dense Vector Search (from Qdrant Index)
             vector = embedding_service.embed_text(query)
             trace.vector_search_used = True
             
@@ -69,7 +103,7 @@ class SemanticSearchService:
                 vector=vector, limit=limit * 2, query_filter=qdrant_filter
             )
 
-            # 2. Database Keyword/Token Match (from PostgreSQL Source of Truth)
+            # 3. Database Keyword/Token Match (from PostgreSQL Source of Truth)
             db_matches = grouping_repository.search_by_tokens(query)
             debug_trace_service.attach_repository_call(
                 trace, "grouping_repository.search_by_tokens", len(db_matches)
@@ -79,7 +113,7 @@ class SemanticSearchService:
             stop_words = {"TEST", "TESTS", "SCRIPT", "SCRIPTS", "SHOW", "FIND", "ME", "FOR", "AND", "OR", "IN", "THE", "OF", "A", "AN"}
             query_tokens = [t.strip().upper() for t in query.split() if len(t.strip()) >= 2 and t.strip().upper() not in stop_words]
 
-            # 3. Hybrid Merging and Calibrated Scoring
+            # 4. Hybrid Merging and Calibrated Scoring
             merged_results = {}
             
             # Process Dense Vector hits
@@ -131,12 +165,12 @@ class SemanticSearchService:
                         "kw_score": kw_score,
                     }
 
-            # 4. Sort and Limit results
+            # 5. Sort and Limit results
             sorted_items = sorted(
                 merged_results.values(), key=lambda x: x["score"], reverse=True
             )[:limit]
 
-            # 5. Hydrate from PostgreSQL database (re-loading live entities)
+            # 6. Hydrate from PostgreSQL database (re-loading live entities)
             for idx, item in enumerate(sorted_items):
                 script_id = item["id"]
                 script_data = test_script_repository.get_by_id(script_id)
@@ -202,5 +236,5 @@ class SemanticSearchService:
         }
 
 
+# ── singleton export ──────────────────────────────────────────────────
 semantic_search_service = SemanticSearchService()
-

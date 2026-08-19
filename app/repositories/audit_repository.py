@@ -1,3 +1,17 @@
+"""
+Audit & Telemetry Repository
+============================
+
+This module provides data access for the `ai_tool_audit_logs` tracking table.
+It serves as the historical ledger of all AI interactions, recording intent routing decisions,
+tool payloads, performance metrics, and application errors.
+
+Key Responsibilities:
+  1. Immutable Logging: Appends a new audit record every time the Intent Router executes a tool.
+  2. Telemetry Aggregation: Provides aggregated performance metrics (avg latency, success rate) 
+     for the WinfoTest frontend analytics dashboard.
+"""
+
 import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -7,12 +21,17 @@ from sqlalchemy import select, func, desc
 from app.models.orm import AiToolAuditLog
 from app.repositories.db import get_session
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
 
 
+# ── class definition ──────────────────────────────────────────────────
 class AuditRepository:
-    """Repository for managing and querying AI Tool Audit Logs and system metrics."""
+    """
+    Data Access Object (DAO) for managing and querying AI Tool Audit Logs and system metrics.
+    """
 
+    # ── insertion operations ────────────────────────────────────────────
     def log_execution(
         self,
         tool_name: str,
@@ -26,6 +45,21 @@ class AuditRepository:
         user_id: Optional[str] = "system",
         trace_id: Optional[str] = None,
     ) -> Optional[str]:
+        """
+        Creates a new immutable audit record in the database.
+        
+        Args:
+            tool_name (str): The final tool selected by the LLM.
+            intent (str, optional): The user's detected semantic intent.
+            arguments_json (Dict, optional): The payload parsed from the LLM.
+            status (str): "success" or "error".
+            records_returned (int): Number of database records affected or retrieved.
+            duration_ms (int): Total end-to-end execution latency.
+            error_message (str, optional): Stack trace or handled error text if failed.
+            
+        Returns:
+            Optional[str]: The UUID of the created audit log.
+        """
         try:
             with get_session() as db:
                 audit_entry = AiToolAuditLog(
@@ -48,11 +82,16 @@ class AuditRepository:
             logger.warning(f"Failed to record AI tool audit log: {exc}")
             return None
 
+    # ── telemetry retrieval ─────────────────────────────────────────────
     def get_recent_logs(self, limit: int = 25) -> List[Dict[str, Any]]:
+        """
+        Retrieves the most recent AI tool executions for frontend observability.
+        """
         try:
             with get_session() as db:
                 stmt = select(AiToolAuditLog).order_by(desc(AiToolAuditLog.timestamp)).limit(limit)
                 rows = db.execute(stmt).scalars().all()
+                
                 return [
                     {
                         "audit_id": str(r.audit_id),
@@ -73,6 +112,12 @@ class AuditRepository:
             return []
 
     def get_telemetry_summary(self) -> Dict[str, Any]:
+        """
+        Calculates aggregate statistics across all AI tool executions.
+        
+        Returns:
+            Dict: Payload containing total calls, avg latency, error counts, and tool distribution.
+        """
         try:
             with get_session() as db:
                 total_calls = db.execute(select(func.count(AiToolAuditLog.audit_id))).scalar() or 0
@@ -81,7 +126,7 @@ class AuditRepository:
                     select(func.count(AiToolAuditLog.audit_id)).where(AiToolAuditLog.status != "success")
                 ).scalar() or 0
 
-                # Tool usage counts
+                # Calculate distribution of which AI tools are used most frequently
                 tool_stmt = (
                     select(AiToolAuditLog.tool_name, func.count(AiToolAuditLog.audit_id))
                     .group_by(AiToolAuditLog.tool_name)
@@ -107,4 +152,5 @@ class AuditRepository:
             }
 
 
+# ── singleton export ──────────────────────────────────────────────────
 audit_repository = AuditRepository()

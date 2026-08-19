@@ -1,13 +1,17 @@
 """
 Hybrid Semantic Intent Router
 ==============================
+
+This module is the core NLP brain of the WinfoTest AI system. It converts unstructured human
+text into structured JSON arguments using a blazing fast two-stage pipeline.
+
 Stage 1 — Vector Anchor Pre-Filter (~15ms)
-  • Embeds user query with all-mpnet-base-v2 dense vectors.
+  • Embeds user query with `all-mpnet-base-v2` dense vectors.
   • Computes cosine similarity against multi-anchor representations for each tool.
-  • Identifies the highest-similarity semantic candidate tool without keywords.
+  • Identifies the highest-similarity semantic candidate tool without relying on exact keywords.
 
 Stage 2 — Focused Micro-LLM Argument Extractor (~2–4s)
-  • Invokes the configured fast local LLM (FAST_LLM_MODEL) with a minimal, focused
+  • Invokes the configured fast local LLM (`FAST_LLM_MODEL`) with a minimal, focused
     prompt containing only the matched candidate tool's argument schema.
   • Dynamically extracts all scenario names, script IDs, modules, and process areas
     with 100% natural language AI comprehension and zero hardcoded regex/keyword shortcuts.
@@ -22,7 +26,9 @@ from app.clients.llm_client import llm_client
 from app.core.config import settings
 from app.schemas.intent import IntentName, IntentRequest, IntentResult, MultiIntentResult
 
+# ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Semantic Tool Anchor Space
@@ -43,12 +49,13 @@ TOOL_ANCHORS: Dict[str, Dict] = {
             "Search tests for procure to pay",
         ],
         "micro_schema": (
-            '{"query": "<search phrase>", "limit": <integer>, "include_steps": <boolean>}'
+            '{"query": "<search phrase>", "limit": <integer>, "include_steps": false}'
         ),
         "micro_instruction": (
             "Extract the search phrase from the query. "
-            "Set limit to 1 if the query refers to a singular script, otherwise 5. "
-            "Set include_steps to true if the user asks for workflow, steps, or execution details, else false."
+            "Set limit to 1 only if the user explicitly references a single script by name or number. "
+            "Otherwise default limit to 8 to return multiple relevant results. "
+            "Never set include_steps to true — always use false."
         ),
     },
     "filtered_script_lookup": {
@@ -205,6 +212,9 @@ Return ONLY a valid JSON object. No markdown code blocks, no explanations, no ad
 def _micro_extractor_user_prompt(
     tool_name: str, schema: str, instruction: str, user_query: str
 ) -> str:
+    """
+    Constructs the exact injection prompt string given to the LLM during Stage 2.
+    """
     return (
         f"Tool: {tool_name}\n"
         f"Argument JSON Schema: {schema}\n"
@@ -221,6 +231,9 @@ _ANCHOR_CACHE: Dict[str, List[List[float]]] = {}
 
 
 def _get_anchor_vectors(tool_name: str, anchors: List[str]) -> List[List[float]]:
+    """
+    Retrieves or lazily computes the vector representations of the tool's anchor strings.
+    """
     if tool_name in _ANCHOR_CACHE:
         return _ANCHOR_CACHE[tool_name]
     from app.services.embedding_service import embedding_service
@@ -236,7 +249,7 @@ def _cosine_similarity(a: List[float], b: List[float]) -> float:
 
 
 def _score_tool(query_vector: List[float], tool_name: str, anchors: List[str]) -> float:
-    """Return maximum cosine similarity between query vector and tool anchors."""
+    """Return maximum cosine similarity between query vector and a given tool's anchors."""
     vecs = _get_anchor_vectors(tool_name, anchors)
     if not vecs:
         return 0.0
@@ -247,9 +260,23 @@ def _score_tool(query_vector: List[float], tool_name: str, anchors: List[str]) -
 # IntentRouterService
 # ─────────────────────────────────────────────────────────────────────────────
 class IntentRouterService:
+    """
+    Orchestrates the two-stage routing and extraction process.
+    """
+    
     CANDIDATE_THRESHOLD = 0.38
 
+    # ── main routing loop ───────────────────────────────────────────────
     def route(self, request: IntentRequest) -> MultiIntentResult:
+        """
+        Executes the Stage 1 vector search and Stage 2 LLM extraction pipeline.
+        
+        Args:
+            request (IntentRequest): Contains the raw unstructured user string.
+            
+        Returns:
+            MultiIntentResult: The structured intent, tool name, and extracted JSON dictionary.
+        """
         if not settings.is_llm_configured:
             logger.warning("LLM not configured; returning unknown intent.")
             return self._unresolvable("LLM not configured.")
@@ -291,13 +318,17 @@ class IntentRouterService:
         
         if schema_spec != "{}":
             try:
+                # Compile the focused prompt containing exactly what we want from the user query
                 micro_user = _micro_extractor_user_prompt(
                     tool_name=best_tool,
                     schema=schema_spec,
                     instruction=tool_def["micro_instruction"],
                     user_query=query,
                 )
+                
+                # Attempt to use a smaller, faster model for extraction if configured
                 model_to_use = getattr(settings, "FAST_LLM_MODEL", None) or settings.LLM_MODEL
+                
                 raw = llm_client.generate_completion(
                     system_prompt=_MICRO_EXTRACTOR_SYSTEM,
                     user_prompt=micro_user,
@@ -306,6 +337,8 @@ class IntentRouterService:
                     model=model_to_use,
                     trace_id="micro_extractor",
                 )
+                
+                # Safely parse the LLM's response, stripping any surrounding markdown code blocks
                 clean = raw.strip()
                 if "```" in clean:
                     m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", clean, re.DOTALL)
@@ -319,7 +352,8 @@ class IntentRouterService:
                 logger.warning("Micro-LLM argument extraction failed: %s", exc)
                 arguments = {}
 
-        # Calibrate confidence from dense vector cosine score
+        # ── Confidence Calibration ──────────────────────────────────────────
+        # Map the cosine threshold range [0.38, 1.0] to a confidence score [0.60, 0.99]
         confidence = round(min(0.99, 0.60 + (best_score - self.CANDIDATE_THRESHOLD) * 1.60), 3)
 
         logger.info(
@@ -339,7 +373,11 @@ class IntentRouterService:
             ),
         )])
 
+    # ── unresolvable fallback ───────────────────────────────────────────
     def _unresolvable(self, reasoning: str) -> MultiIntentResult:
+        """
+        Creates a fallback 'UNKNOWN' intent payload when routing fails.
+        """
         return MultiIntentResult(intents=[IntentResult(
             intent=IntentName.UNKNOWN,
             tool="unknown",
@@ -350,4 +388,5 @@ class IntentRouterService:
         )])
 
 
+# ── singleton export ──────────────────────────────────────────────────
 intent_router_service = IntentRouterService()

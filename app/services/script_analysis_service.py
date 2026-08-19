@@ -79,6 +79,56 @@ class ScriptAnalysisService:
                 "llm_summary_failed": True,
             }
 
+    def _generate_objective(self, script: Dict[str, Any], steps: List[Dict[str, Any]]) -> str:
+        """
+        Uses the LLM to synthesise a tight 1-2 sentence business objective for a test script
+        when the database `objective` field is null.
+        """
+        if not getattr(settings, 'LLM_BASE_URL', None) and not getattr(settings, 'LLM_API_KEY', None):
+            return script.get('script_name', '')
+
+        # Build a compact step summary — first 8 steps are enough context
+        step_lines = []
+        for i, s in enumerate(steps[:8], start=1):
+            action = s.get('step_action') or s.get('action') or ''
+            desc = s.get('step_description') or s.get('description') or ''
+            param = s.get('input_parameter') or ''
+            line = f"{i}. {action}"
+            if desc:
+                line += f": {desc}"
+            if param:
+                line += f" ({param})"
+            step_lines.append(line)
+
+        steps_text = '\n'.join(step_lines) if step_lines else 'No steps available.'
+
+        system_prompt = (
+            "You are an ERP QA analyst. Write a single, clear, business-facing objective sentence "
+            "(max 40 words) that explains what this Oracle ERP test script validates or achieves. "
+            "Be specific to the business process — avoid generic phrases like 'this script tests'. "
+            "Output only the objective sentence, nothing else."
+        )
+        user_prompt = (
+            f"Script: {script.get('test_script_number', '')} — {script.get('script_name', '')}\n"
+            f"Module: {script.get('module', 'Unknown')}\n"
+            f"Process: {script.get('process', 'Unknown')}\n"
+            f"First steps:\n{steps_text}"
+        )
+
+        try:
+            model_to_use = getattr(settings, 'FAST_LLM_MODEL', None) or settings.LLM_MODEL
+            result = llm_client.generate_completion(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=0.1,
+                max_tokens=80,
+                model=model_to_use,
+                trace_id='generate_objective'
+            )
+            return result.strip().strip('"').strip("'")
+        except Exception as e:
+            logger.warning("LLM objective generation failed: %s", e)
+            return script.get('script_name', '')
     def lookup_script(self, identifier: str) -> Dict[str, Any]:
         from app.repositories.test_script_repository import test_script_repository
         from app.repositories.step_repository import step_repository
@@ -103,6 +153,11 @@ class ScriptAnalysisService:
             m = re.search(r"### 2\. Functional Objective & Scope\s*\n(.*?)(?=\n###|\Z)", doc, re.DOTALL)
             if m:
                 script_payload["objective"] = m.group(1).strip()
+
+        # Final fallback: use LLM to generate objective, or script_name as the very last resort
+        if not script_payload.get("objective"):
+            generated_obj = self._generate_objective(script_payload, steps)
+            script_payload["objective"] = generated_obj if generated_obj else script_payload.get("script_name", "")
 
         return {
             "status": "success",
