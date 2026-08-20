@@ -1204,58 +1204,7 @@
                 ` : ''}
               </div>
             `;
-          } else if (tool === 'recommend_locator_fixes') {
-            const scriptName = content.script_name || 'Target Script';
-            const repairs = content.locator_repairs || [];
 
-            let repairsHtml = '';
-            repairs.forEach(r => {
-              repairsHtml += `
-                <div class="border border-mist dark:border-slate rounded-cards p-4 mb-3 last:mb-0 bg-white dark:bg-dark-surface">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="font-geist-mono text-[10px] bg-fog dark:bg-slate text-graphite dark:text-mist px-2 py-0.5 rounded font-bold">Step ${r.step_no} (${escapeHtml(r.step_action)})</span>
-                    <span class="font-geist-mono text-[10px] text-graphite dark:text-ash-border">Resilience: ${r.resilience_score || 95}%</span>
-                  </div>
-
-                  <div class="text-xs mb-2">
-                    <span class="font-bryant text-[10px] text-ember-red uppercase tracking-bryant block font-bold mb-1">Fragile Locator</span>
-                    <div class="p-2 bg-fog dark:bg-[#151515] border border-mist dark:border-slate rounded font-geist-mono text-[11px] text-ember-red break-all">
-                      ${escapeHtml(r.broken_locator)}
-                    </div>
-                  </div>
-
-                  <div class="text-xs mb-2">
-                    <div class="flex justify-between items-center mb-1">
-                      <span class="font-bryant text-[10px] text-slate dark:text-pewter uppercase tracking-bryant block font-bold">Repaired Selector</span>
-                      <button onclick="copyToClipboard(this)" data-code="${escapeHtml(r.suggested_locator).replace(/"/g, '&quot;')}" class="font-geist text-[10px] text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white flex items-center gap-1 transition-colors cursor-pointer">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        Copy
-                      </button>
-                    </div>
-                    <div class="p-2 bg-fog dark:bg-[#151515] border border-mist dark:border-slate rounded font-geist-mono text-[11px] text-carbon-ink dark:text-mist break-all font-semibold">
-                      ${escapeHtml(r.suggested_locator)}
-                    </div>
-                  </div>
-
-                  <p class="text-xs text-graphite dark:text-ash-border italic mt-1">
-                    Rationale: ${escapeHtml(r.fix_rationale)}
-                  </p>
-                </div>
-              `;
-            });
-
-            displayHtml = `
-              <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
-                <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
-                  <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold">Self-Healing Locator Repair</span>
-                  <span class="font-bryant text-xs text-carbon-ink dark:text-paper-white uppercase tracking-bryant font-bold">${escapeHtml(scriptName)}</span>
-                </div>
-                <p class="text-xs text-graphite dark:text-ash-border mb-4">${escapeHtml(content.healing_summary || '')}</p>
-                <div class="max-h-80 overflow-y-auto pr-1 space-y-2">
-                  ${repairsHtml || '<p class="text-xs text-graphite italic">No locators requiring repair.</p>'}
-                </div>
-              </div>
-            `;
           } else if (tool === 'assess_test_risk') {
             const healthScore = content.overall_health_score || 85;
             const riskItems = content.risk_items || [];
