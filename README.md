@@ -28,9 +28,11 @@ Enterprise ERP testing across platforms like Oracle Fusion Cloud (Procure to Pay
 
 ## Key Capabilities
 
-### 1. Hybrid Intent Router (Dense Vector + Micro-Schema Extraction)
-* **Sub-Second Intent Resolution**: Uses a dense vector router (`all-mpnet-base-v2`) with cosine similarity thresholding (0.70 confidence calibration) to identify tool intents in under 10ms.
+### 1. Hybrid Intent Router (Dense Vector + Micro-Schema Extraction + Regex Fast-Paths)
+* **Zero-Latency Regex Fast-Paths**: Bypasses LLM overhead entirely for highly structured lookups (e.g., exact script IDs) via regex extraction, returning intents in ~15ms.
+* **Sub-Second Intent Resolution**: Uses a dense vector router (`nomic-embed-text`) with cosine similarity thresholding (0.70 confidence calibration) to identify tool intents.
 * **Micro-LLM Dynamic Parsing**: Extracts strongly-typed Pydantic arguments using localized greedy decoding (`qwen2.5-coder:1.5b`) without slow conversational overhead.
+* **Concurrent Multi-Intent Execution**: Executes complex multi-tool queries (e.g., "Run tests and cluster scripts") in parallel using `asyncio.gather()`, reducing total wait time to the speed of the slowest tool.
 
 ### 2. Semantic Discovery & Hybrid Search (Vector + Full-Text RAG)
 * **Dense & Keyword Fusion**: Combines Qdrant dense vector search with PostgreSQL ILIKE/full-text keyword ranking.
@@ -55,7 +57,7 @@ Enterprise ERP testing across platforms like Oracle Fusion Cloud (Procure to Pay
 
 ## System Architecture
 
-The platform enforces a decoupled **Tool-Registry & Repository Pattern**, completely separating AI reasoning from database persistence.
+The platform enforces a decoupled **Tool-Registry & Repository Pattern**, completely separating AI reasoning from database persistence. The ORM layer is fully self-contained within the AI repository (`app/winfo_test_orm`), completely decoupled from external ERP engineering repositories to guarantee robust containerized deployments.
 
 ```mermaid
 graph TD
@@ -65,23 +67,22 @@ graph TD
     subgraph "Reasoning & Intent Layer"
         FastAPI --> HybridRouter[Hybrid Intent Router]
         HybridRouter <-->|Vector Cosine Match| IntentAnchors[(Dense Vector Embeddings)]
+        HybridRouter <-->|Regex / Fast-Path| FastMatch[Zero-Latency Matcher]
         HybridRouter <-->|Arg Extraction| LocalLLM[Local LLM - Qwen 2.5]
     end
     
     subgraph "Tool Dispatcher & Core Services"
         HybridRouter -->|Validated Pydantic Payload| ToolRegistry[Tool Registry Service]
-        ToolRegistry --> StepGen[Step Generation Service]
-        ToolRegistry --> SearchService[Semantic Search Service]
-        ToolRegistry --> SuiteService[Test Suite Service]
-        ToolRegistry --> FailureService[Failure Analysis & Self-Healing Service]
-        ToolRegistry --> ClusterService[Semantic Cluster Service]
-        ToolRegistry --> RiskService[Risk Assessment Service]
+        ToolRegistry -->|Concurrent Execution| StepGen[Step Generation Service]
+        ToolRegistry -->|Concurrent Execution| SearchService[Semantic Search Service]
+        ToolRegistry -->|Concurrent Execution| SuiteService[Test Suite Service]
+        ToolRegistry --> FailureService[Failure Analysis & Self-Healing]
     end
     
     subgraph "Data & Persistence Layer"
         SearchService <-->|Dense Search| Qdrant[(Qdrant Vector DB)]
-        StepGen & SearchService & SuiteService & FailureService & ClusterService & RiskService -->|Live Entity Rehydration| RepoLayer[Repository Layer]
-        RepoLayer <-->|Strict SQL / ACID| PostgreSQL[(PostgreSQL Source of Truth)]
+        StepGen & SearchService & SuiteService & FailureService -->|Live Entity Rehydration| RepoLayer[Repository Layer]
+        RepoLayer <-->|app.winfo_test_orm| PostgreSQL[(PostgreSQL Source of Truth)]
     end
 ```
 
@@ -94,9 +95,9 @@ graph TD
 | **Backend Framework** | FastAPI | Asynchronous API gateway with Server-Sent Events (SSE) streaming |
 | **Relational Database** | PostgreSQL 15+ | Single Source of Truth for test scripts, execution runs, steps, and audit logs |
 | **Vector Database** | Qdrant | On-disk / In-memory vector store hosting 768-dim embeddings |
-| **Embedding Engine** | `sentence-transformers` | Runs `all-mpnet-base-v2` locally on CPU |
-| **Local LLM Engine** | Ollama (`qwen2.5-coder`) | `qwen2.5-coder:1.5b` (Micro-Extractor) & `7b` (Complex Synthesis) |
-| **ORM & Data Access** | SQLAlchemy | Repository-pattern connection pool with strict isolation |
+| **Embedding Engine** | `sentence-transformers` | Runs `nomic-embed-text` locally on CPU |
+| **Local LLM Engine** | Ollama (`qwen2.5-coder`) | `qwen2.5-coder:1.5b` (Fast Router) & `7b` (Complex Synthesis) |
+| **ORM & Data Access** | SQLAlchemy | Repository-pattern connection pool via self-contained `app/winfo_test_orm` |
 | **Frontend UI** | Vanilla JS + Tailwind CSS | Responsive UI with CRT diagnostics, dark/light themes, and persistent sessions |
 
 ---
