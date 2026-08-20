@@ -450,22 +450,28 @@ class StepGenerationService:
             param_raw = st["input_parameter"].strip()
             desc = st["step_description"].strip()
 
-            # Infer input_type
+            # Infer input_type and Playwright JSON locators
+            locator_fallbacks = []
             if "Text Field" in act or "Enter" in act or "Type" in act:
                 input_type = "Textbox"
                 locator_code = f'page.get_by_role("textbox", name="{target}", exact=True).fill("{{value}}")'
+                locator_fallbacks = [[{"method": "role", "value": "textbox", "kwargs": {"name": target, "exact": True}}]]
             elif "Button" in act or "Click Button" in act:
                 input_type = "Button"
                 locator_code = f'page.get_by_role("button", name="{target}", exact=True).click()'
+                locator_fallbacks = [[{"method": "role", "value": "button", "kwargs": {"name": target, "exact": True}}]]
             elif "Navigate" in act or "Click" in act:
                 input_type = "Navigate"
                 locator_code = f'page.get_by_title("{target}", exact=True).click()'
+                locator_fallbacks = [[{"method": "title", "value": target, "kwargs": {"exact": True}}]]
             elif "Option" in act or "Dropdown" in act or "Select" in act:
                 input_type = "Dropdown"
                 locator_code = f'page.get_by_text("{target}", exact=True).click()'
+                locator_fallbacks = [[{"method": "text", "value": target, "kwargs": {"exact": True}}]]
             elif "Verify" in act:
                 input_type = "Validation"
                 locator_code = f'expect(page.get_by_text("{target}")).to_be_visible()'
+                locator_fallbacks = [[{"method": "text", "value": target, "kwargs": {"exact": True}}]]
             elif "Tab" in act or "Key" in act:
                 input_type = "Other"
                 locator_code = 'page.keyboard.press("Tab")'
@@ -475,6 +481,9 @@ class StepGenerationService:
             else:
                 input_type = "Other"
                 locator_code = f'page.locator("{target}").click()'
+                locator_fallbacks = [target]
+            
+            fb_json = json.dumps(locator_fallbacks) if locator_fallbacks else ""
 
             # Strict WinfoTest input_parameter assignment:
             # - Tells the automation runner WHERE on the screen to click, type, or navigate
@@ -529,6 +538,7 @@ class StepGenerationService:
                 "input_parameter": input_param,
                 "input_type": input_type,
                 "locator_code": locator_code,
+                "locator_fallbacks": fb_json,
                 "default_value": default_val,
                 "wait_ms": 0,
                 "is_mandatory": True,

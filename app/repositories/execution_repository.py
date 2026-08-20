@@ -20,7 +20,9 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from app.models.orm import TestRunScript, TestRunScriptStep, TestRunScriptStepResult
+from app.winfo_test_orm.models.test_run_scripts import TestRunScripts as TestRunScript
+from app.winfo_test_orm.models.test_run_script_steps import TestRunScriptSteps as TestRunScriptStep
+from app.winfo_test_orm.models.test_run_script_step_results import TestRunScriptStepResults as TestRunScriptStepResult
 from app.repositories.db import get_session
 
 # ── logger initialization ───────────────────────────────────────────────

@@ -135,9 +135,7 @@ class LLMClient:
         if max_tokens:
             kwargs["max_tokens"] = max_tokens
 
-        # json_object mode is strictly an OpenAI cloud feature.
-        # Ollama handles JSON constraints directly in the system prompt.
-        if json_mode and not self.base_url:
+        if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 
         response = self.client.chat.completions.create(**kwargs)
