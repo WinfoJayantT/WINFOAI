@@ -1,0 +1,14 @@
+-- V022: Drop playwright_locator_telemetry (introduced V019, extended V021).
+--
+-- Reverts the deterministic-resolver/fallback-chain locator layer
+-- (pw_step_engine.locators) — a separate, later effort from the
+-- self-heal locator_metadata persistence reverted earlier (see the
+-- V019__step_locator_metadata.sql drop). That resolver package was never
+-- wired to more than a synchronous parse-only shim in production
+-- (StepRunner._build_locator), so this table only ever held telemetry for
+-- a code path that has now been removed entirely in favor of computing
+-- locators directly in Python at record time with Playwright-validated
+-- candidates. No data migration needed — this table stored aggregate,
+-- observability-only rows (strategy kind, fallback flag, latency), never a
+-- semantic descriptor anything else depends on.
+DROP TABLE IF EXISTS wt2dev.playwright_locator_telemetry;

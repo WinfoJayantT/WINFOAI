@@ -63,6 +63,7 @@ class VectorStoreService:
                     f"Could not connect to Qdrant server ({e}). Falling back to local embedded storage ('./qdrant_local_db')."
                 )
                 self._client = QdrantClient(path="./qdrant_local_db")
+                setattr(self._client, "_is_local", True)
         return self._client
 
     # ── schema provisioning ─────────────────────────────────────────────
@@ -132,10 +133,18 @@ class VectorStoreService:
                 logger.error(f"Upsert failed on remote Qdrant in production: {exc}")
                 raise RuntimeError(f"Qdrant upsert failed in production: {exc}")
             
-            logger.warning(f"Upsert failed on remote Qdrant: {exc}. Retrying with local fallback...")
+            logger.warning(f"Upsert failed: {exc}. Retrying with local fallback...")
             try:
-                # Emergency fallback to local embedded database
-                self._client = QdrantClient(path="./qdrant_local_db")
+                # Emergency fallback only if we haven't already fallen back
+                if not getattr(self._client, "_is_local", False):
+                    # Try to close old client if it exists
+                    if hasattr(self._client, "close"):
+                        try:
+                            self._client.close()
+                        except:
+                            pass
+                    self._client = QdrantClient(path="./qdrant_local_db")
+                    setattr(self._client, "_is_local", True)
                 self.ensure_collection()
                 self._client.upsert(
                     collection_name=settings.QDRANT_COLLECTION,
@@ -208,7 +217,14 @@ class VectorStoreService:
             
             logger.warning(f"Remote Qdrant search failed: {exc}. Retrying with local fallback...")
             try:
-                self._client = QdrantClient(path="./qdrant_local_db")
+                if not getattr(self._client, "_is_local", False):
+                    if hasattr(self._client, "close"):
+                        try:
+                            self._client.close()
+                        except:
+                            pass
+                    self._client = QdrantClient(path="./qdrant_local_db")
+                    setattr(self._client, "_is_local", True)
                 self.ensure_collection()
                 if hasattr(self.client, "search"):
                     results = self.client.search(

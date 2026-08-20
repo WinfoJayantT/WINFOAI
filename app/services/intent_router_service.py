@@ -71,6 +71,10 @@ TOOL_ANCHORS: Dict[str, Dict] = {
         ],
         "micro_schema": '{"identifier": "<exact script number, name, or ID>"}',
         "micro_instruction": "Extract the specific script code, script number, name, or UUID identifier from the query.",
+        "regex_fastpath": {
+            "pattern": r"([A-Z]{2,4}(?:\.[A-Z0-9]+)+|[a-f0-9-]{36}|[A-Z]+-\d+)",
+            "map_to": "identifier"
+        }
     },
     "generate_script_steps": {
         "intent_enum": IntentName.GENERATE_SCRIPT_STEPS,
@@ -316,6 +320,15 @@ class IntentRouterService:
         arguments: Dict[str, Any] = {}
         schema_spec = tool_def.get("micro_schema", "{}")
         
+        # Check regex fast path first to potentially bypass LLM completely
+        fastpath = tool_def.get("regex_fastpath")
+        if fastpath:
+            m = re.search(fastpath["pattern"], query)
+            if m:
+                arguments[fastpath["map_to"]] = m.group(1)
+                schema_spec = "{}"  # Bypass LLM extraction
+                logger.info(f"[RegexFastPath] Extracted {arguments} instantly.")
+        
         if schema_spec != "{}":
             try:
                 # Compile the focused prompt containing exactly what we want from the user query
@@ -336,6 +349,7 @@ class IntentRouterService:
                     max_tokens=150,
                     model=model_to_use,
                     trace_id="micro_extractor",
+                    json_mode=True,
                 )
                 
                 # Safely parse the LLM's response, stripping any surrounding markdown code blocks

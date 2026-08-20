@@ -13,7 +13,7 @@ Key Responsibilities:
 from typing import Any, Dict, Optional
 from sqlalchemy import select
 
-from app.models.orm import User
+from app.winfo_test_orm.models.application_users import ApplicationUser
 from app.repositories.db import get_session
 
 
@@ -34,16 +34,16 @@ class UserRepository:
             Optional[Dict]: The hydrated user record payload, or None if unmatched.
         """
         with get_session() as db:
-            stmt = select(User).where(User.username.ilike(username))
+            stmt = select(ApplicationUser).where(ApplicationUser.email.ilike(username))
             user = db.execute(stmt).scalar_one_or_none()
             
             if user is None:
                 return None
                 
             return {
-                "id": user.id, 
-                "username": user.username, 
-                "display_name": user.display_name
+                "id": str(user.application_users_id), 
+                "username": user.email, 
+                "display_name": f"{user.first_name} {user.last_name}"
             }
 
 

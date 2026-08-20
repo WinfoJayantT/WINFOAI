@@ -71,8 +71,11 @@ class ToolRegistryService:
             tool_results = []
             ambiguous_intents = []
             
-            # 2. Iterate and Execute Resolved Intents
-            for intent_res in route_result.intents:
+            # 2. Parallel Execute Resolved Intents
+            import asyncio
+            loop = asyncio.get_running_loop()
+
+            async def _execute_and_log(intent_res):
                 logger.info(
                     f"Routed intent: {intent_res.intent} -> tool: {intent_res.tool} (Confidence: {intent_res.confidence})"
                 )
@@ -80,33 +83,41 @@ class ToolRegistryService:
                 # Check confidence thresholding
                 if intent_res.confidence < 0.70 or intent_res.tool == "unknown" or intent_res.intent == IntentName.UNKNOWN:
                     ambiguous_intents.append(intent_res)
-                    continue
+                    return None
                     
                 args_to_pass = dict(intent_res.arguments)
                 if test_data:
                     args_to_pass["test_data"] = test_data
 
-                # Execute target service tool
-                res = self.execute_tool(
-                    intent_res.tool, args_to_pass, session_id=session_id
+                # Execute target service tool concurrently in a thread
+                res = await loop.run_in_executor(
+                    None, self.execute_tool, intent_res.tool, args_to_pass, session_id
                 )
                 if isinstance(res, dict):
                     res.setdefault("tool", intent_res.tool)
                 
-                tool_results.append(res)
-                
                 # 3. Log execution telemetry asynchronously
                 duration_ms = int((time.time() - start_time) * 1000)
                 rec_count = len(res.get("execution_steps", [])) or len(res.get("matches", [])) or len(res.get("risk_items", [])) or 1
-                audit_repository.log_execution(
-                    tool_name=intent_res.tool,
-                    intent=str(intent_res.intent),
-                    arguments_json=intent_res.arguments,
-                    status=res.get("status", "success"),
-                    records_returned=rec_count,
-                    duration_ms=duration_ms,
-                    session_id=session_id,
+                
+                await loop.run_in_executor(
+                    None,
+                    audit_repository.log_execution,
+                    intent_res.tool,
+                    str(intent_res.intent),
+                    intent_res.arguments,
+                    res.get("status", "success"),
+                    rec_count,
+                    duration_ms,
+                    session_id
                 )
+                return res
+
+            # Launch all intents concurrently
+            tasks = [_execute_and_log(intent_res) for intent_res in route_result.intents]
+            results = await asyncio.gather(*tasks)
+            
+            tool_results = [r for r in results if r is not None]
                 
             # 4. Handle Ambiguous Queries
             if ambiguous_intents and not tool_results:
