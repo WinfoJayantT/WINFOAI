@@ -1544,6 +1544,65 @@
                 </div>
               </div>
             `;
+          } else if (tool === 'recommend_locator_fixes') {
+            const repairs = content.locator_repairs || [];
+            const scriptName = escapeHtml(content.script_name || '');
+            let repairsHtml = '';
+            
+            if (repairs.length > 0) {
+              repairsHtml = repairs.map(rep => {
+                const stepNo = rep.step_no;
+                const newLoc = escapeHtml(rep.suggested_locator);
+                const reason = escapeHtml(rep.fix_rationale);
+                const score = rep.resilience_score || 95;
+                const broken = escapeHtml(rep.broken_locator);
+                return `
+                  <div class="mb-4 bg-fog/20 dark:bg-[#1a1a1a] border border-mist dark:border-[#2a2a2a] rounded-cards p-4">
+                    <div class="flex justify-between items-center mb-3">
+                      <span class="font-geist-mono text-[10px] text-white bg-carbon-ink dark:bg-slate px-2 py-0.5 rounded-badges font-bold">Step ${stepNo}</span>
+                      <span class="font-geist text-[10px] text-[#27c93f] font-semibold flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        ${score}% Resilient
+                      </span>
+                    </div>
+                    <div class="mb-2">
+                      <span class="font-bryant text-[10px] text-graphite dark:text-ash-border uppercase tracking-bryant block mb-1">Old Locator</span>
+                      <pre class="font-geist-mono text-[11px] text-ember-red bg-[#fff5f5] dark:bg-[#3b1515] px-2 py-1.5 rounded overflow-x-auto border border-red-200 dark:border-red-900 line-through">${broken}</pre>
+                    </div>
+                    <div class="mb-3">
+                      <span class="font-bryant text-[10px] text-graphite dark:text-ash-border uppercase tracking-bryant block mb-1">Healed Locator</span>
+                      <pre class="font-geist-mono text-[11px] text-[#1e6f43] dark:text-[#4ade80] bg-[#eaf6f0] dark:bg-[#1a2f24] px-2 py-1.5 rounded overflow-x-auto border border-green-200 dark:border-green-900 font-bold">${newLoc}</pre>
+                    </div>
+                    <p class="text-[10px] text-graphite dark:text-pewter mb-4 leading-relaxed">${reason}</p>
+                    
+                    <button onclick="healLocator('${scriptName.replace(/'/g, "\\'")}', ${stepNo}, '${newLoc.replace(/'/g, "\\'")}')" class="w-full justify-center inline-flex items-center gap-1.5 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-4 py-2 font-bryant text-xs uppercase tracking-bryant font-bold hover:bg-[#333] dark:hover:bg-paper-white transition-colors cursor-pointer shadow-sm relative overflow-hidden group">
+                      <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                      ✨ Auto-Heal Locator
+                    </button>
+                  </div>
+                `;
+              }).join('');
+            } else {
+              repairsHtml = `<p class="py-4 text-graphite dark:text-pewter italic text-xs">No broken locators found.</p>`;
+            }
+
+            displayHtml = `
+              <div class="w-full bg-white dark:bg-dark-surface border border-[#27c93f]/30 rounded-cards p-8 font-geist text-left transition-colors shadow-[0_0_15px_rgba(39,201,63,0.05)]">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-mist dark:border-slate">
+                  <div>
+                    <span class="font-bryant text-xs text-[#27c93f] uppercase tracking-bryant font-bold block mb-1">Interactive Self-Healing</span>
+                    <h3 class="font-geist text-base font-bold text-carbon-ink dark:text-paper-white">${scriptName}</h3>
+                  </div>
+                  <span class="font-geist-mono text-[10px] font-bold text-carbon-ink dark:text-mist bg-fog dark:bg-slate px-3 py-1.5 rounded-badges shrink-0 border border-[#27c93f]/20">${content.total_broken_locators} Repairs</span>
+                </div>
+                
+                <p class="text-[11px] text-graphite dark:text-ash-border mb-4 leading-relaxed">${escapeHtml(content.healing_summary)}</p>
+                
+                <div class="mt-4">
+                  ${repairsHtml}
+                </div>
+              </div>
+            `;
           } else if (tool === 'execute_script_set') {
             const execId = content.execution_id || 'N/A';
             const status = content.status || 'unknown';
@@ -2284,6 +2343,33 @@
       } catch (err) {
         console.error('Error fetching steps:', err);
         content.innerHTML = `<div class="p-6 text-center text-ember-red font-geist-mono">Failed to retrieve exact steps from PostgreSQL database.</div>`;
+      }
+    };
+
+    window.healLocator = async function(scriptName, stepNo, newLocator) {
+      try {
+        const res = await fetch('/api/v1/heal-locator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            script_name: scriptName,
+            step_no: stepNo,
+            new_locator: newLocator
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+          // Toast notification or visual change
+          alert(`Success: ${data.message}`);
+          // You could also visually disable the heal button here to show it was applied
+        } else {
+          alert(`Error: ${data.message}`);
+        }
+      } catch (err) {
+        console.error('Failed to heal locator:', err);
+        alert('Network error while attempting to heal locator.');
       }
     };
 

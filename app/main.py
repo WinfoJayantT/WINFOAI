@@ -93,6 +93,15 @@ class IndexRequest(BaseModel):
     fast_mode: bool = True
 
 
+class HealLocatorRequest(BaseModel):
+    """
+    Pydantic schema for applying a self-healed locator patch.
+    """
+    script_name: str
+    step_no: int
+    new_locator: str
+
+
 # ── routes ────────────────────────────────────────────────────────────
 @app.get("/")
 async def serve_frontend():
@@ -161,6 +170,23 @@ async def trigger_indexing(req: IndexRequest = IndexRequest()) -> Dict[str, Any]
     except Exception as exc:
         logger.exception("Error triggering indexing")
         return {"status": "internal_error", "message": "Failed to trigger semantic indexing.", "reasoning": str(exc)}
+
+
+@app.post("/api/v1/heal-locator")
+async def heal_locator(req: HealLocatorRequest) -> Dict[str, Any]:
+    """
+    Interactive Self-Healing: instantly patches a script's broken locator in the database.
+    """
+    try:
+        from app.repositories.step_repository import step_repository
+        success = step_repository.update_locator(req.script_name, req.step_no, req.new_locator)
+        if success:
+            return {"status": "success", "message": "Locator instantly healed."}
+        else:
+            return {"status": "error", "message": "Failed to heal locator (step not found or db error)."}
+    except Exception as exc:
+        logger.exception("Error healing locator")
+        return {"status": "error", "message": "Failed to heal locator.", "reasoning": str(exc)}
 
 
 @app.get("/api/v1/index/status")
