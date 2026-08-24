@@ -105,10 +105,43 @@ class StepRepository:
                     logger.debug("test_run_script_steps lookup failed: %s", e)
                     return []
                     
+                    return []
+                    
         except Exception as exc:
             logger.error("Querying steps failed for script_id %s: %s", script_id, exc)
             return []
 
+    def update_locator(self, script_id: str, step_no: int, new_locator: str) -> bool:
+        """
+        Instantly patches the database with a self-healed resilient locator for a specific step.
+        """
+        try:
+            with engine.connect() as conn:
+                import uuid as _uuid
+                resolved_id = str(script_id)
+                try:
+                    _uuid.UUID(resolved_id)
+                except (ValueError, AttributeError):
+                    from app.repositories.test_script_repository import test_script_repository
+                    script = test_script_repository.get_by_id(script_id)
+                    if script:
+                        resolved_id = str(script.get("test_script_id") or script.get("id") or script_id)
+                
+                query = """
+                    UPDATE master_steps 
+                    SET locator_code = :new_locator, updated_at = NOW() 
+                    WHERE script_id::text = :script_id AND step_no = :step_no
+                """
+                result = conn.execute(text(query), {
+                    "new_locator": new_locator,
+                    "script_id": resolved_id,
+                    "step_no": step_no
+                })
+                conn.commit()
+                return result.rowcount > 0
+        except Exception as exc:
+            logger.error("Failed to heal locator for script_id %s step %s: %s", script_id, step_no, exc)
+            return False
 
 # ── singleton export ──────────────────────────────────────────────────
 step_repository = StepRepository()

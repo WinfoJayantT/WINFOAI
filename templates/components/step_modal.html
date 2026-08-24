@@ -1,0 +1,25 @@
+<div id="step-modal" class="hidden-state fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 motion-fade-slide">
+        <div class="bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+          <div class="p-5 border-b border-mist dark:border-slate flex justify-between items-center">
+            <div>
+              <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block" id="modal-script-num">TS-001</span>
+              <h3 class="font-exposure text-lg text-carbon-ink dark:text-paper-white font-bold" id="modal-script-title">Step Inspector</h3>
+            </div>
+            <button onclick="closeStepModal()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-1 space-y-4 font-geist text-xs" id="modal-step-content">
+            <div class="text-center py-6 text-graphite font-geist-mono">Loading step inspection details...</div>
+          </div>
+          <div class="p-4 border-t border-mist dark:border-slate flex justify-between items-center bg-fog dark:bg-[#151515]">
+            <span class="text-[11px] text-graphite dark:text-pewter font-geist-mono">WinfoTest Step Definition</span>
+            <div class="flex gap-2">
+              <button id="modal-csv-btn" class="px-4 py-2 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
+                Download CSV
+              </button>
+              <button onclick="closeStepModal()" class="px-4 py-2 border border-ash-border dark:border-slate text-carbon-ink dark:text-mist rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:bg-fog dark:hover:bg-slate transition-colors cursor-pointer">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>

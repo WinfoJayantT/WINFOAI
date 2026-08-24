@@ -88,7 +88,8 @@ class LLMClient:
         Lazily initializes the OpenAI SDK instance, pointing it to Ollama if configured.
         """
         if not self._client:
-            kwargs = {"api_key": self.api_key}
+            timeout = getattr(settings, "LLM_TIMEOUT_SECONDS", 300.0)
+            kwargs = {"api_key": self.api_key, "timeout": float(timeout)}
             if self.base_url:
                 kwargs["base_url"] = self.base_url
             self._client = OpenAI(**kwargs)

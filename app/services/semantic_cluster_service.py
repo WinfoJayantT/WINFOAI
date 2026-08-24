@@ -125,6 +125,8 @@ class SemanticClusterService:
         
         if settings.is_llm_configured:
             # Prepare minimal metadata for the LLM to cluster without token exhaustion
+            # Limit to top 30 to prevent context window blowouts on massive concepts
+            top_records = all_matched_records[:30]
             script_summaries = [
                 {
                     "test_script_number": r.get("test_script_number"),
@@ -133,7 +135,7 @@ class SemanticClusterService:
                     "module": r.get("module"),
                     "process": r.get("process")
                 }
-                for r in all_matched_records
+                for r in top_records
             ]
             
             try:
@@ -142,7 +144,7 @@ class SemanticClusterService:
                     system_prompt=CLUSTER_SYSTEM_PROMPT.replace("{concept}", request.concept),
                     user_prompt=str(script_summaries),
                     temperature=0.0,
-                    max_tokens=400,
+                    max_tokens=4096,
                     model=model_to_use,
                     trace_id="cluster_mapping"
                 )

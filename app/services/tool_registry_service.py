@@ -8,26 +8,27 @@ It acts as the central traffic cop, receiving incoming chat requests, querying t
 appropriate domain service, logging audit telemetry, and formatting the output stream.
 """
 
+import asyncio
+import json
 import logging
 import time
-from typing import Any, Dict, Generator, Optional
-import json
+from collections.abc import Generator
+from typing import Any
 
 from app.repositories.audit_repository import audit_repository
 from app.schemas.cluster import ClusterRequest
-from app.schemas.intent import IntentRequest, IntentResult, IntentName, MultiIntentResult
+from app.schemas.intent import IntentName, IntentRequest, IntentResult, MultiIntentResult
 from app.schemas.test_risk import RiskAssessmentRequest
 from app.schemas.test_suite import TestSuiteRequest
+from app.services.execution_orchestration_service import execution_orchestration_service
+from app.services.failure_analysis_service import failure_analysis_service
 from app.services.intent_router_service import intent_router_service
+from app.services.risk_assessment_service import risk_assessment_service
+from app.services.script_analysis_service import script_analysis_service
 from app.services.semantic_cluster_service import semantic_cluster_service
 from app.services.semantic_search_service import semantic_search_service
-from app.services.script_analysis_service import script_analysis_service
-from app.services.failure_analysis_service import failure_analysis_service
-from app.services.execution_orchestration_service import execution_orchestration_service
-from app.services.test_suite_service import test_suite_service
-from app.services.risk_assessment_service import risk_assessment_service
 from app.services.step_generation_service import step_generation_service
-from app.clients.llm_client import llm_client
+from app.services.test_suite_service import test_suite_service
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class ToolRegistryService:
 
     # ── streaming chat dispatch ─────────────────────────────────────────
     async def stream_chat(
-        self, user_query: str, session_id: str = "default", test_data: Optional[Dict[str, Any]] = None
+        self, user_query: str, session_id: str = "default", test_data: dict[str, Any] | None = None
     ) -> Generator[str, None, None]:
         """
         Processes a chat query and yields an SSE stream of status tokens and the final JSON payload.
@@ -64,15 +65,54 @@ class ToolRegistryService:
         logger.info(f"Streaming chat query: '{user_query}' for session: {session_id}")
 
         try:
+            from app.repositories.db import SessionLocal
+            from app.models.orm import AiChatMessage
+            import uuid
+            
+            # Save user query to history
+            try:
+                db = SessionLocal()
+                new_msg = AiChatMessage(
+                    id=uuid.uuid4(),
+                    session_id=session_id,
+                    role="user",
+                    content=user_query
+                )
+                db.add(new_msg)
+                db.commit()
+            except Exception as e:
+                logger.error(f"Failed to save user message: {e}")
+                
+            # Fetch recent history for context
+            conversation_context = None
+            try:
+                recent = db.query(AiChatMessage).filter(
+                    AiChatMessage.session_id == session_id
+                ).order_by(AiChatMessage.timestamp.desc()).limit(8).all()
+                
+                if recent:
+                    recent.reverse()
+                    conversation_context = {
+                        "recent_messages": [
+                            {"role": m.role, "content": m.content} for m in recent
+                        ]
+                    }
+                db.close()
+            except Exception as e:
+                logger.error(f"Failed to fetch history: {e}")
+
             # 1. Resolve Intent
-            intent_request = IntentRequest(user_query=user_query)
+            intent_request = IntentRequest(
+                user_query=user_query, 
+                conversation_context=conversation_context,
+                app_context=test_data
+            )
             route_result: MultiIntentResult = intent_router_service.route(intent_request)
 
             tool_results = []
             ambiguous_intents = []
             
             # 2. Parallel Execute Resolved Intents
-            import asyncio
             loop = asyncio.get_running_loop()
 
             async def _execute_and_log(intent_res):
@@ -133,35 +173,50 @@ class ToolRegistryService:
                     ],
                     "reasoning": "Confidence score is below threshold or intent is unknown."
                 }
-                yield f'data: {{"type": "token", "content": "I wasn\'t quite sure what you meant by that. Could you clarify? For example, you can ask me to generate a test suite, search for specific tests, or group tests by process area."}}\n\n'
+                yield 'data: {"type": "token", "content": "I wasn\'t quite sure what you meant by that. Could you clarify? For example, you can ask me to generate a test suite, search for specific tests, or group tests by process area."}\n\n'
                 yield f'data: {{"type": "done", "results": [{json.dumps(ambiguous_res, default=str)}]}}\n\n'
                 return
 
             if not tool_results:
-                yield f'data: {{"type": "token", "content": "I couldn\'t find any specific actions to take based on your request."}}\n\n'
-                yield f'data: {{"type": "done", "results": []}}\n\n'
+                yield 'data: {"type": "token", "content": "I couldn\'t find any specific actions to take based on your request."}\n\n'
+                yield 'data: {"type": "done", "results": []}\n\n'
                 return
 
             # 5. Emit successful final result payload back to UI
             final_payload = json.dumps({"type": "done", "results": tool_results}, default=str)
             yield f'data: {final_payload}\n\n'
 
+            # Save assistant response to history
+            try:
+                db = SessionLocal()
+                bot_msg = AiChatMessage(
+                    id=uuid.uuid4(),
+                    session_id=session_id,
+                    role="assistant",
+                    content=json.dumps([{"tool": r["tool"], "status": r.get("status")} for r in tool_results])
+                )
+                db.add(bot_msg)
+                db.commit()
+                db.close()
+            except Exception as e:
+                logger.error(f"Failed to save bot message: {e}")
+
         except Exception as exc:
-            logger.error(f"Error handling chat request: {exc}")
+            logger.exception("Unhandled error in stream_chat pipeline")
             err_res = {
                 "status": "internal_error",
                 "tool": "unknown",
                 "message": "An internal system error occurred.",
                 "reasoning": str(exc),
             }
-            yield f'data: {{"type": "token", "content": "An internal error occurred while processing your request."}}\n\n'
+            yield 'data: {"type": "token", "content": "An internal error occurred while processing your request."}\n\n'
             yield f'data: {{"type": "done", "results": [{json.dumps(err_res, default=str)}]}}\n\n'
 
 
     # ── synchronous chat dispatch ───────────────────────────────────────
     def handle_chat(
-        self, user_query: str, session_id: str = "default"
-    ) -> Dict[str, Any]:
+        self, user_query: str, session_id: str = "default", user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Synchronous fallback for processing chat requests. 
         Functions identically to `stream_chat` but blocks until the entire payload is ready.
@@ -222,7 +277,7 @@ class ToolRegistryService:
             )
             return res
         except Exception as exc:
-            logger.error(f"Error handling chat request: {exc}")
+            logger.exception("Unhandled error in handle_chat pipeline")
             audit_repository.log_execution(
                 tool_name="unknown",
                 status="error",
@@ -240,8 +295,8 @@ class ToolRegistryService:
 
     # ── backend tool execution mapping ──────────────────────────────────
     def execute_tool(
-        self, tool_name: str, arguments: Dict[str, Any], session_id: str = "default"
-    ) -> Dict[str, Any]:
+        self, tool_name: str, arguments: dict[str, Any], session_id: str = "default"
+    ) -> dict[str, Any]:
         """
         Maps a resolved tool name string directly to its corresponding Domain Service.
         Extracts expected arguments from the dynamic JSON and fires the backend logic.
@@ -335,6 +390,29 @@ class ToolRegistryService:
                     scenario=scenario, process_area=process_area, test_data=test_data
                 )
 
+            elif tool_name == "schedule_test_run":
+                from app.services.scheduling_service import scheduling_service
+                target_suite = arguments.get("target_suite") or arguments.get("suite_name") or arguments.get("script_name") or arguments.get("target_name") or ""
+                scheduled_time = arguments.get("scheduled_time") or ""
+                return scheduling_service.schedule_run(target_suite=target_suite, scheduled_time=scheduled_time)
+
+            elif tool_name == "analyze_test_results":
+                from app.services.analytics_service import analytics_service
+                timeframe = arguments.get("timeframe") or ""
+                module = arguments.get("module") or ""
+                status = arguments.get("status") or ""
+                return analytics_service.analyze_results(timeframe=timeframe, module=module, status=status)
+
+            elif tool_name == "detect_duplicates":
+                from app.services.duplicate_detection_service import duplicate_detection_service
+                module = arguments.get("module") or ""
+                return duplicate_detection_service.detect_duplicates(module=module)
+                
+            elif tool_name == "lint_locators":
+                from app.services.locator_linting_service import locator_linting_service
+                module = arguments.get("module") or ""
+                return locator_linting_service.lint_locators(module=module)
+
             else:
                 return {
                     "status": "not_found", 
@@ -342,7 +420,7 @@ class ToolRegistryService:
                     "message": f"Tool '{tool_name}' is not recognized."
                 }
         except Exception as exc:
-            logger.error(f"Tool execution error for '{tool_name}': {exc}")
+            logger.exception("Unhandled error executing tool '%s'", tool_name)
             return {
                 "status": "internal_error",
                 "tool": tool_name,

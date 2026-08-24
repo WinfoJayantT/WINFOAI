@@ -10,6 +10,8 @@ from app.core.config import settings
 Base = declarative_base()
 SCHEMA = settings.DATABASE_SCHEMA if settings.DATABASE_SCHEMA != "public" else None
 
+# --- WinfoTest Core tables ---
+
 # --- AI-owned tables (section 29) ---
 
 class AiSemanticDocument(Base):
@@ -38,6 +40,16 @@ class AiConversationSession(Base):
     session_id = Column(String, primary_key=True)
     state_json = Column(JSON, nullable=False, default=dict)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
+class AiChatMessage(Base):
+    __tablename__ = "ai_chat_messages"
+    __table_args__ = {"schema": SCHEMA} if SCHEMA else {}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id = Column(String, ForeignKey(f"{SCHEMA + '.' if SCHEMA else ''}ai_conversation_sessions.session_id"), nullable=False)
+    role = Column(String, nullable=False)  # 'user' or 'assistant'
+    content = Column(Text, nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
 
 
 class AiToolAuditLog(Base):

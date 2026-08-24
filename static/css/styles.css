@@ -1,0 +1,149 @@
+body {
+      font-family: 'Geist', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hide scrollbars globally across all browsers while retaining full scroll functionality */
+    * {
+      -ms-overflow-style: none !important;  /* IE and Edge */
+      scrollbar-width: none !important;  /* Firefox */
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    .hidden-state {
+      display: none !important;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    /* Cyber Diagnostics & Glow Styles */
+    .cyber-glow {
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    .cyber-glow-green {
+      text-shadow: 0 0 8px rgba(39, 201, 63, 0.6);
+    }
+
+    .scanline-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scanline-container::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 50%, rgba(255, 255, 255, 0.03) 51%, transparent 100%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @keyframes radarPing {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    .::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: inherit;
+      border-radius: inherit;
+      animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+      z-index: -1;
+    }
+
+    /* Motion.dev Spring & Layout Animation Utilities */
+    .motion-fade-slide {
+      animation: motionFadeSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes motionFadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .motion-hover {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .motion-hover:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Smooth Animated Sidebar Collapsing (Slower 0.65s Ease-Out Curve) */
+    aside {
+      max-width: 360px;
+      width: 360px;
+      opacity: 1;
+      will-change: max-width, width, opacity, padding;
+      transition: max-width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), 
+                  padding 0.65s cubic-bezier(0.22, 1, 0.36, 1), 
+                  border-width 0.65s ease;
+    }
+
+    aside.sidebar-collapsed {
+      max-width: 0px !important;
+      width: 0px !important;
+      min-width: 0px !important;
+      opacity: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      border-right-width: 0px !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
