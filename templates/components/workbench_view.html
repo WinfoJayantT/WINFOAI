@@ -1,0 +1,35 @@
+<div id="script-workbench-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-6 motion-fade-slide">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
+          <div>
+            <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Workbench // Test Repository</span>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Script Step Inspector & Locators</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="text" id="workbench-search" onkeyup="filterWorkbenchScripts()" placeholder="Filter scripts..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-2 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+            <button onclick="loadWorkbenchScripts()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
+              Refresh Scripts
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-geist">
+              <thead>
+                <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
+                  <th class="py-2.5 px-3">Script Number</th>
+                  <th class="py-2.5 px-3">Script Name</th>
+                  <th class="py-2.5 px-3">Module</th>
+                  <th class="py-2.5 px-3">Process Area</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workbench-script-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-graphite dark:text-pewter font-geist-mono">Loading script repository...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>

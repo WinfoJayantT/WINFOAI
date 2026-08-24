@@ -1,0 +1,95 @@
+<div id="chat-container" class="flex-1 overflow-y-auto px-8 md:px-12 py-10 flex flex-col gap-10">
+
+        <!-- Empty State Hero -->
+        <div id="empty-state"
+          class="max-w-3xl w-full mx-auto flex flex-col justify-center py-8 animate-fade-in text-left">
+
+          <h2
+            class="font-exposure text-3xl md:text-4xl text-carbon-ink dark:text-paper-white mb-4 max-w-xl transition-colors">
+            Explore test metadata —
+          </h2>
+
+          <p class="font-geist text-sm text-graphite dark:text-ash-border leading-relaxed mb-10 max-w-xl">
+            Query the vector store index or pull production data directly from PostgreSQL. Use the dynamic clustering
+            tool to organize scripts, generate regression suites, or explain workflows.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-2">
+
+            <button onclick="submitSuggested('Group scripts by process area')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Clustering</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Group scripts by process area
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Perform high-precision database token matching to classify all active test scripts.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Show supplier banking tests')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Semantic
+                Search</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Show supplier banking tests
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Search similar workflows via semantic embeddings retrieved from the Qdrant index.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Generate end-to-end regression test suite for Procure to Pay')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Suite Generation</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Generate E2E Suite for Procure to Pay
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Assemble multi-script regression workflows and detect business process coverage gaps.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Recommend locator fixes for failed scripts')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Self-Healing</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Recommend self-healing locator fixes
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Analyze fragile locators from execution failures and synthesize resilient selectors.
+              </p>
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- Chat Feed -->
+        <div id="chat-feed" class="flex flex-col gap-8 w-full max-w-3xl mx-auto hidden-state"></div>
+
+        <!-- Visible Querying Database Loading Indicator -->
+        <div id="loading-indicator"
+          class="hidden-state w-full max-w-3xl mx-auto flex items-center p-4 bg-white/90 dark:bg-dark-surface/90 border border-mist dark:border-slate rounded-cards shadow-md backdrop-blur-md animate-fade-in-up my-4 transition-all">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-ember-red opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-ember-red"></span>
+            </span>
+            <div>
+              <span id="loading-text" class="text-xs font-geist font-semibold text-carbon-ink dark:text-paper-white block">Querying PostgreSQL Database & Semantic Engine...</span>
+              <span class="text-[10px] font-geist-mono text-graphite dark:text-ash-border">Grounding test intelligence in live database telemetry</span>
+            </div>
+          </div>
+        </div>
+
+
+      </div>

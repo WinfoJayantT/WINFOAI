@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinfoTest AI Intelligence</title>
+
+  <!-- Preconnect and import fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // Enables class-based dark mode toggling
+      theme: {
+        extend: {
+          colors: {
+            'carbon-ink': '#1a211e',
+            'paper-white': '#ffffff',
+            'true-black': '#000000',
+            'obsidian': '#0c0c0c',
+            'fog': '#eef1f0',
+            'mist': '#e0e0e0',
+            'graphite': '#606562',
+            'ash-border': '#cccfcd',
+            'slate': '#363537',
+            'pewter': '#4e4e4e',
+            'ember-red': '#cc2e39',
+            // Dark mode surface colors
+            'dark-canvas': '#121212',
+            'dark-surface': '#1e1e1e',
+          },
+          fontFamily: {
+            'geist': ['Geist', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            'geist-mono': ['"Geist Mono"', 'ui-monospace', 'monospace'],
+            'exposure': ['"Playfair Display"', 'ui-serif', 'Georgia', 'serif'],
+            'bryant': ['"Barlow Condensed"', 'ui-sans-serif', 'sans-serif'],
+          },
+          letterSpacing: {
+            'bryant': '0.057em',
+            'exposure-lg': '-0.025em',
+          },
+          borderRadius: {
+            'nav': '4px',
+            'cards': '8px',
+            'badges': '9999px',
+            'images': '8px',
+            'inputs': '4px',
+            'buttons': '4px',
+          }
+        }
+      }
+    }
+  </script>
+
+  
+
+  <!-- Script to prevent FOUC (Flash of Unstyled Content) on load -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body
+  class="bg-paper-white dark:bg-dark-canvas text-carbon-ink dark:text-mist min-h-screen transition-colors duration-200">
+
+
+
+  <div class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+  {% include "components/sidebar.html" %}
+
+    <!-- Right Side: Chat Area -->
+    <main
+      class="flex-1 flex flex-col h-screen overflow-hidden bg-paper-white dark:bg-dark-canvas transition-colors duration-200">
+
+      <!-- Primary Navigation Header -->
+      <nav
+        class="h-16 border-b border-mist dark:border-slate px-6 lg:px-8 flex items-center justify-between shrink-0 bg-white dark:bg-dark-canvas transition-colors duration-200">
+        <div class="flex items-center gap-4">
+          <button type="button" onclick="window.toggleSidebar()" id="sidebar-open-btn" title="Toggle Sidebar"
+            class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1.5 rounded border border-ash-border dark:border-[#282828] bg-fog dark:bg-[#151515] transition-colors cursor-pointer flex items-center justify-center motion-hover">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <span class="font-bryant text-slate dark:text-mist text-xs tracking-bryant uppercase font-bold">Active
+              Workspace</span>
+            <span
+              class="font-geist text-xs text-graphite dark:text-ash-border font-semibold bg-fog dark:bg-slate px-2.5 py-0.5 rounded-badges select-all">winfotest-ai</span>
+          </div>
+
+          <!-- Bento & View Navigation Tabs -->
+          <div class="flex items-center bg-fog dark:bg-[#151515] p-1 rounded-buttons border border-mist dark:border-[#282828]">
+            <button onclick="switchTab('chat')" id="tab-btn-chat"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm">
+              AI Chat
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              Analytics
+            </button>
+            <button onclick="switchTab('workbench')" id="tab-btn-workbench"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              ️ Workbench
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <span
+            class="hidden lg:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
+            Status: SQL Verified</span>
+
+          <!-- Theme Toggle Button -->
+          <button id="theme-toggle"
+            class="text-slate dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white transition-colors cursor-pointer p-1">
+            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                fill-rule="evenodd" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Chat Feed Scroll Container -->
+      {% include "components/chat_view.html" %}
+
+      <!-- Bento Grid Analytics & Index Status View -->
+      {% include "components/analytics_view.html" %}
+
+      <!-- Script Workbench View -->
+      {% include "components/workbench_view.html" %}
+
+      <!-- Step Inspector Modal -->
+      {% include "components/step_modal.html" %}
+
+
+      <!-- Input Composer -->
+      <footer
+        class="p-6 border-t border-mist dark:border-slate bg-white dark:bg-dark-canvas shrink-0 transition-colors duration-200">
+        <form id="chat-form" class="max-w-3xl w-full mx-auto flex flex-col gap-2">
+          
+          <!-- Test Data Attachment Drawer -->
+          <div id="test-data-drawer" class="hidden-state p-3 bg-fog dark:bg-dark-surface border border-mist dark:border-slate rounded-cards text-xs animate-fade-in-up">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="font-bryant text-[10px] text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold">Attach Scenario Test Data (JSON / Variables)</span>
+              <button type="button" onclick="toggleTestDataDrawer()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xs font-bold">&times; Close</button>
+            </div>
+            <textarea id="test-data-input" rows="2"
+              class="w-full bg-white dark:bg-[#151515] border border-ash-border dark:border-[#333] rounded-inputs p-2 text-xs font-geist-mono text-carbon-ink dark:text-paper-white outline-none resize-none"
+              placeholder='{"Supplier_Name": "Oracle America Inc", "Invoice_Number": "INV-2025-001", "Invoice_Amount": "15000.00"}'></textarea>
+            <div class="flex justify-between items-center mt-2 text-[10px] text-graphite dark:text-pewter font-geist">
+              <span>Variables will be bound into <span class="font-geist-mono text-carbon-ink dark:text-mist">{{Variable}}</span> placeholders & default values.</span>
+              <div class="flex items-center gap-2">
+                <input type="file" id="test-data-file-input" accept=".json,.csv" class="hidden" onchange="handleTestDataFileUpload(this)">
+                <button type="button" onclick="document.getElementById('test-data-file-input').click()" class="text-carbon-ink dark:text-mist font-semibold hover:underline cursor-pointer">Upload .json/.csv</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 items-end">
+            <div
+              class="flex-1 bg-fog dark:bg-dark-surface border border-ash-border dark:border-slate rounded-inputs px-4 py-3 flex items-center gap-2 focus-within:border-carbon-ink dark:focus-within:border-mist transition-colors">
+              <textarea id="user-input" rows="1"
+                class="flex-1 text-base text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter outline-none bg-transparent font-geist font-normal resize-none overflow-hidden block w-full py-0 m-0 leading-[1.5]"
+                style="min-height: 24px; max-height: 180px;"
+                placeholder="Ask anything... (e.g. Generate automation steps for AP invoice)" autocomplete="off"></textarea>
+              <button type="button" onclick="toggleTestDataDrawer()" id="test-data-btn" title="Attach Test Data"
+                class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1 rounded transition-colors cursor-pointer shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              </button>
+            </div>
+            <button type="submit" id="send-btn"
+              class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center h-[48px]">
+              Send Query
+            </button>
+          </div>
+        </form>
+      </footer>
+
+    </main>
+
+  </div>
+
+    
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+
+</html>

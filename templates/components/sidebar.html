@@ -1,0 +1,51 @@
+    <!-- Left Side: Multi-Session Conversation Sidebar (Always Dark) -->
+    <aside
+      class="w-full md:w-[320px] lg:w-[360px] bg-obsidian text-white border-b md:border-b-0 md:border-r border-[#222222] p-5 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-hidden">
+
+      <div class="flex flex-col h-full">
+        <!-- Brand Header with Collapse Button -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="font-bryant text-white text-[11px] tracking-bryant uppercase font-bold">
+            WinfoTest // Intent Engine
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-geist-mono text-graphite">v1.0.0</span>
+            <button type="button" onclick="window.toggleSidebar()" id="sidebar-close-btn" title="Close Sidebar"
+              class="text-graphite hover:text-white p-1.5 rounded transition-colors cursor-pointer flex items-center justify-center motion-hover bg-[#141414] border border-[#282828]">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- New Chat Button -->
+        <button onclick="createNewSession()"
+          class="w-full bg-white text-obsidian border border-white rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:bg-fog transition-colors duration-200 cursor-pointer font-bold flex items-center justify-center gap-2 shadow-sm motion-hover">
+          <span>+</span>
+          <span>New Chat Session</span>
+        </button>
+
+        <div class="w-full h-[1px] bg-[#222222] my-4"></div>
+
+        <!-- Previous Conversations Section -->
+        <div class="flex flex-col flex-1 overflow-hidden">
+          <div class="font-bryant text-[10px] text-graphite tracking-bryant uppercase font-bold mb-3 flex items-center justify-between">
+            <span>PREVIOUS CONVERSATIONS</span>
+            <span id="session-count-badge" class="text-[10px] font-geist-mono text-pewter">0</span>
+          </div>
+
+          <!-- Conversation List Scroll View -->
+          <div id="conversation-history-list" class="flex flex-col gap-1.5 overflow-y-auto flex-1 pr-1">
+            <div class="text-[11px] font-geist text-graphite text-center py-6">No previous chats yet. Start a new session above!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Index Action -->
+      <div class="pt-3 border-t border-[#1a1a1a] shrink-0 mt-3">
+        <button onclick="startIndexing()" id="index-btn"
+          class="w-full border border-[#333] text-[#a0a4a1] rounded-nav font-bryant text-[11px] tracking-bryant uppercase text-center py-2 hover:border-white hover:text-white transition-colors cursor-pointer font-bold bg-transparent">
+          Re-Index Vector Scripts
+        </button>
+      </div>
+
+    </aside>

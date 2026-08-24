@@ -12,6 +12,7 @@ env
 .env
 .env.local
 scratch/
+winfotest2.0CDB/
 qdrant_local_db/
 .vscode/
 .idea/
@@ -21,3 +22,5 @@ htmlcov/
 .DS_Store
 Thumbs.db
 Data for project/
+frontend/node_modules/
+frontend/src/

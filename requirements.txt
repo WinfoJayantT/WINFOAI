@@ -14,3 +14,5 @@ openai>=1.40.0
 httpx
 pytest
 pytest-asyncio
+
+jinja2

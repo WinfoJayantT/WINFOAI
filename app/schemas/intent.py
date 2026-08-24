@@ -16,6 +16,10 @@ class IntentName(str, Enum):
     INDEX_ALL_SCRIPTS = "index_all_scripts"
     CHECK_INDEXING_STATUS = "check_indexing_status"
     GENERATE_SCRIPT_STEPS = "generate_script_steps"
+    SCHEDULE_TEST_RUN = "schedule_test_run"
+    ANALYZE_TEST_RESULTS = "analyze_test_results"
+    DETECT_DUPLICATES = "detect_duplicates"
+    LINT_LOCATORS = "lint_locators"
     UNKNOWN = "unknown"
 
 
@@ -25,6 +29,9 @@ class IntentRequest(BaseModel):
     )
     conversation_context: Optional[Dict[str, Any]] = Field(
         default=None, description="Optional conversation state context."
+    )
+    app_context: Optional[Dict[str, Any]] = Field(
+        default=None, description="Optional active application state context from the frontend UI."
     )
 
 

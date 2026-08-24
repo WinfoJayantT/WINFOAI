@@ -11,11 +11,16 @@ import logging
 import threading
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.config import settings
 from app.services.tool_registry_service import tool_registry_service
 
 # ── logger initialization ───────────────────────────────────────────────
@@ -62,11 +67,82 @@ async def lifespan(app: FastAPI):
     yield
 
 
-# ── application setup ─────────────────────────────────────────────────
-app = FastAPI(title="WinfoTest AI Intelligence", lifespan=lifespan)
+# ── application setup ──────────────────────────────────────────────────
+app = FastAPI(
+    title="WinfoTest AI Intelligence",
+    version="1.0.0",
+    description="Enterprise AI assistant for WinfoTest ERP test automation.",
+    lifespan=lifespan,
+)
+
+# ── CORS middleware ──────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 # Mount the static directory to serve the frontend UI HTML/JS/CSS
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ── Include Routers ────────────────────────────────────────────────────
+
+# ── global exception handlers ──────────────────────────────────────────────────
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """
+    Global handler for all HTTP exceptions (e.g. 404, 405).
+    Returns RFC-7807 Problem Details JSON for consistent error format.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": exc.status_code,
+            "title": "HTTP Error",
+            "detail": exc.detail,
+            "path": str(request.url),
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all handler for any unhandled exceptions that escape the route handlers.
+    Logs the full traceback and returns a standardized 500 error (RFC-7807 format).
+    This prevents the server from returning raw Python tracebacks to clients.
+    """
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": 500,
+            "title": "Internal Server Error",
+            "detail": "An unexpected error occurred. Please try again or contact support.",
+            "path": str(request.url),
+        },
+    )
+
+
+# ── optional API key authentication ──────────────────────────────────────────────
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+async def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
+    """
+    FastAPI dependency that enforces API key authentication when API_KEY_HEADER is configured.
+    In local mode (API_KEY_HEADER is None/empty), all requests are allowed through.
+    """
+    if not settings.API_KEY_HEADER:
+        # Auth is disabled in local dev mode — allow all requests
+        return
+    if api_key != settings.API_KEY_HEADER:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Include 'X-API-Key' header.",
+        )
 
 
 # ── schemas ───────────────────────────────────────────────────────────
@@ -103,10 +179,12 @@ class HealLocatorRequest(BaseModel):
 
 
 # ── routes ────────────────────────────────────────────────────────────
+templates = Jinja2Templates(directory="templates")
+
 @app.get("/")
-async def serve_frontend():
+async def serve_frontend(request: Request):
     """Serves the primary UI interface."""
-    return FileResponse("static/index.html")
+    return templates.TemplateResponse(request=request, name="base.html")
 
 
 @app.post("/api/v1/chat")
@@ -141,6 +219,30 @@ async def chat_stream(request: ChatRequest):
         ),
         media_type="text/event-stream"
     )
+
+@app.get("/api/v1/chat/history")
+async def get_chat_history(session_id: str = "default"):
+    """
+    Fetch chat history for the session.
+    """
+    try:
+        from app.repositories.db import SessionLocal
+        from app.models.orm import AiChatMessage
+        db = SessionLocal()
+        messages = db.query(AiChatMessage).filter(
+            AiChatMessage.session_id == session_id
+        ).order_by(AiChatMessage.timestamp.asc()).all()
+        
+        history = [
+            {"role": m.role, "content": m.content, "timestamp": m.timestamp.isoformat()}
+            for m in messages
+        ]
+        db.close()
+        return {"status": "success", "history": history}
+    except Exception as exc:
+        logger.exception("Error fetching history")
+        return {"status": "error", "message": str(exc)}
+
 
 
 @app.post("/api/v1/export/steps-csv")
@@ -302,6 +404,32 @@ async def get_risk_matrix(query: Optional[str] = None) -> Dict[str, Any]:
     except Exception as exc:
         logger.exception("Error fetching risk matrix")
         return {"status": "error", "message": "Failed to fetch risk matrix", "reasoning": str(exc)}
+
+
+@app.get("/api/v1/clusters/duplicates")
+async def get_duplicate_clusters(module: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Exposes Semantic Duplicate Detection clustering.
+    """
+    try:
+        from app.services.duplicate_detection_service import duplicate_detection_service
+        return duplicate_detection_service.detect_duplicates(module=module)
+    except Exception as exc:
+        logger.exception("Error detecting duplicate clusters")
+        return {"status": "error", "message": "Failed to detect duplicate clusters", "reasoning": str(exc)}
+
+
+@app.get("/api/v1/audit/locators")
+async def get_locator_audit(module: str = "All Modules") -> Dict[str, Any]:
+    """
+    Exposes Locator Linting audit for a specific module.
+    """
+    try:
+        from app.services.locator_linting_service import locator_linting_service
+        return locator_linting_service.lint_locators(module=module)
+    except Exception as exc:
+        logger.exception("Error linting locators")
+        return {"status": "error", "message": "Failed to lint locators", "reasoning": str(exc)}
 
 
 @app.get("/api/v1/scripts")

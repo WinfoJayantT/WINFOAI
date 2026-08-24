@@ -61,13 +61,13 @@ TOOL_ANCHORS: Dict[str, Dict] = {
     "filtered_script_lookup": {
         "intent_enum": IntentName.FILTERED_SCRIPT_LOOKUP,
         "anchors": [
-            "Explain script PRC.P2P.PO.22",
-            "Look up test script number INV-001",
-            "Show me details for script SUP.003",
-            "What does test script 3007_Create_Supplier do",
-            "Get information about script PRC",
+            "Explain script [MODULE.PROCESS.SCRIPT_ID]",
+            "Look up test script number [SCRIPT_ID]",
+            "Show me details for script [MODULE.ID]",
+            "What does test script [SCRIPT_NAME] do",
+            "Get information about script [MODULE_PREFIX]",
             "Describe the test script with ID",
-            "Pull up script details for AP.INV.12",
+            "Pull up script details for [MODULE.PROCESS.ID]",
         ],
         "micro_schema": '{"identifier": "<exact script number, name, or ID>"}',
         "micro_instruction": "Extract the specific script code, script number, name, or UUID identifier from the query.",
@@ -143,7 +143,7 @@ TOOL_ANCHORS: Dict[str, Dict] = {
     "recommend_locator_fixes": {
         "intent_enum": IntentName.RECOMMEND_LOCATOR_FIXES,
         "anchors": [
-            "Suggest locator fixes for failing script PRC.P2P with broken locator",
+            "Suggest locator fixes for failing script [SCRIPT_ID] with broken locator",
             "Fix broken XPath locators for element",
             "Recommend self-healing locator patches for selector",
             "Repair element selectors and broken XPath for script",
@@ -151,6 +151,52 @@ TOOL_ANCHORS: Dict[str, Dict] = {
         ],
         "micro_schema": '{"script_name": "<script identifier if mentioned>", "error_log": "<broken locator or error log>"}',
         "micro_instruction": "Extract the script identifier and any broken locator or error log provided.",
+    },
+    "schedule_test_run": {
+        "intent_enum": IntentName.SCHEDULE_TEST_RUN,
+        "anchors": [
+            "Schedule test run for tomorrow",
+            "Run the AP Invoices suite tonight at 10 PM",
+            "Execute the supplier onboarding script at midnight",
+            "Queue test execution for next Friday",
+            "Run this test script at 5:00 AM",
+        ],
+        "micro_schema": '{"target_suite": "<script or suite name>", "scheduled_time": "<ISO-8601 datetime>"}',
+        "micro_instruction": "Extract the target test script or suite name. Convert the requested time to an ISO-8601 datetime format.",
+    },
+    "analyze_test_results": {
+        "intent_enum": IntentName.ANALYZE_TEST_RESULTS,
+        "anchors": [
+            "How many tests failed yesterday",
+            "What is the pass rate for Accounts Payable",
+            "Show me test results for last week",
+            "Summarize the failed tests in the procurement module",
+            "Give me the execution stats for today",
+        ],
+        "micro_schema": '{"timeframe": "<yesterday|today|last week|this month|etc>", "module": "<module name>", "status": "<pass|fail|all>"}',
+        "micro_instruction": "Extract the requested timeframe, target module, and execution status filter.",
+    },
+    "detect_duplicates": {
+        "intent_enum": IntentName.DETECT_DUPLICATES,
+        "anchors": [
+            "Find redundant test scripts in the Procurement module",
+            "Are there any duplicate tests in Accounts Payable?",
+            "Identify similar scripts that can be consolidated",
+            "Show me redundant testing flows",
+        ],
+        "micro_schema": '{"module": "<module name or empty>"}',
+        "micro_instruction": "Extract the target module name if specified. If not, leave empty.",
+    },
+    "lint_locators": {
+        "intent_enum": IntentName.LINT_LOCATORS,
+        "anchors": [
+            "Audit the locators in the Accounts Receivable module",
+            "Check for brittle XPaths in Finance",
+            "Find fragile test steps in the HCM module",
+            "Lint the locators for bad practices",
+        ],
+        "micro_schema": '{"module": "<module name>"}',
+        "micro_instruction": "Extract the target module name. (Crucial: a module is required for this action)",
     },
     "analyze_entity": {
         "intent_enum": IntentName.ANALYZE_ENTITY,
@@ -287,7 +333,22 @@ class IntentRouterService:
 
         query = request.user_query.strip()
 
-        # ── Stage 1: Vector Anchor Pre-Filter ────────────────────────────────
+        # ── Stage 1: Global Regex Fast-Path (Overrides Semantic Match) ───────
+        for tool_name, tool_def in TOOL_ANCHORS.items():
+            fastpath = tool_def.get("regex_fastpath")
+            if fastpath:
+                m = re.search(fastpath["pattern"], query)
+                if m:
+                    logger.info(f"[GlobalRegexFastPath] Query matched fastpath for {tool_name}")
+                    return MultiIntentResult(intents=[IntentResult(
+                        intent=tool_def["intent_enum"],
+                        tool=tool_name,
+                        arguments={fastpath["map_to"]: m.group(1)},
+                        confidence=1.0,
+                        reasoning="Exact regex match on script ID or specific pattern."
+                    )])
+
+        # ── Stage 2: Vector Anchor Pre-Filter ────────────────────────────────
         try:
             from app.services.embedding_service import embedding_service
             query_vector = embedding_service.embed_text(query)
@@ -316,18 +377,9 @@ class IntentRouterService:
         tool_def = TOOL_ANCHORS[best_tool]
         intent_enum = tool_def["intent_enum"]
 
-        # ── Stage 2: Dynamic Micro-LLM Argument Extraction ───────────────────
+        # ── Stage 3: Dynamic Micro-LLM Argument Extraction ───────────────────
         arguments: Dict[str, Any] = {}
         schema_spec = tool_def.get("micro_schema", "{}")
-        
-        # Check regex fast path first to potentially bypass LLM completely
-        fastpath = tool_def.get("regex_fastpath")
-        if fastpath:
-            m = re.search(fastpath["pattern"], query)
-            if m:
-                arguments[fastpath["map_to"]] = m.group(1)
-                schema_spec = "{}"  # Bypass LLM extraction
-                logger.info(f"[RegexFastPath] Extracted {arguments} instantly.")
         
         if schema_spec != "{}":
             try:
