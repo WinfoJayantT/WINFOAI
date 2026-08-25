@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -10,12 +10,12 @@ class ScriptLookupRequest(BaseModel):
 class TestScriptResponse(BaseModel):
     id: str
     test_script_number: str
-    qualified_name: Optional[str] = None
+    qualified_name: str | None = None
     script_name: str
-    description: Optional[str] = None
-    objective: Optional[str] = None
-    module: Optional[str] = None
-    process: Optional[str] = None
-    process_area: Optional[str] = None
-    role: Optional[str] = None
-    steps: List[Dict[str, Any]] = []
+    description: str | None = None
+    objective: str | None = None
+    module: str | None = None
+    process: str | None = None
+    process_area: str | None = None
+    role: str | None = None
+    steps: list[dict[str, Any]] = []

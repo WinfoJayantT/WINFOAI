@@ -10,11 +10,12 @@ Key Responsibilities:
      formal database UUIDs and display names.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
+
 from sqlalchemy import select
 
-from app.winfo_test_orm.models.application_users import ApplicationUser
 from app.repositories.db import get_session
+from app.winfo_test_orm.models.application_users import ApplicationUser
 
 
 # ── class definition ──────────────────────────────────────────────────
@@ -23,7 +24,7 @@ class UserRepository:
     Data Access Object (DAO) for resolving user identity in the AI context.
     """
 
-    def resolve_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+    def resolve_by_username(self, username: str) -> dict[str, Any] | None:
         """
         Performs a case-insensitive lookup to find a user by their username handle.
         

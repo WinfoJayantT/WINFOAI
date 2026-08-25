@@ -1,7 +1,10 @@
-from .base import Base
-from sqlalchemy import Boolean, DateTime, Integer, String, text, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+
+from sqlalchemy import UUID, Boolean, DateTime, String, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base
+
 # from uuid import UUID
 
 
@@ -31,9 +34,6 @@ class ScheduleGroup(Base):
     last_updated_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_updated_by: Mapped[UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     scheduled_time_utc: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    is_deleted: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("false"), nullable=False
-    )
     deleted_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_by: Mapped[UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 

@@ -15,17 +15,17 @@ Key Responsibilities:
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from app.clients.llm_client import llm_client
+from app.core.config import settings
 from app.repositories.grouping_repository import grouping_repository
 from app.schemas.cluster import ClusterRequest
 from app.services.conversation_state_service import conversation_state_service
 from app.services.embedding_service import embedding_service
 from app.services.vector_store_service import vector_store_service
-from app.core.config import settings
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class LLMClusterMapping(BaseModel):
     """
     Pydantic schema enforcing the exact structure we expect from the LLM when clustering.
     """
-    clusters: Dict[str, List[str]] = Field(
+    clusters: dict[str, list[str]] = Field(
         ..., description="Map of dynamic cluster names to arrays of test_script_number"
     )
     reasoning: str = Field(..., description="Explanation of why these clusters were chosen")
@@ -67,7 +67,7 @@ class SemanticClusterService:
     # ── primary clustering implementation ───────────────────────────────
     def cluster(
         self, request: ClusterRequest, session_id: str = "default"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Executes the hybrid search and clustering pipeline for a given concept.
         
@@ -120,8 +120,8 @@ class SemanticClusterService:
             }
 
         # 3. Dynamic LLM Mapping
-        final_clusters: Dict[str, List[Dict[str, Any]]] = {}
-        all_matched_ids: List[str] = [str(r.get("id", "")) for r in all_matched_records]
+        final_clusters: dict[str, list[dict[str, Any]]] = {}
+        all_matched_ids: list[str] = [str(r.get("id", "")) for r in all_matched_records]
         
         if settings.is_llm_configured:
             # Prepare minimal metadata for the LLM to cluster without token exhaustion
@@ -149,7 +149,8 @@ class SemanticClusterService:
                     trace_id="cluster_mapping"
                 )
                 
-                import json, re
+                import json
+                import re
                 clean = raw_json.strip()
                 if "```" in clean:
                     m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", clean, re.DOTALL)

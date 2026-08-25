@@ -1,14 +1,14 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
+from app.clients.llm_client import LLMTimeoutError, llm_client
 from app.core.config import settings
-from app.clients.llm_client import llm_client, LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 
 class ScriptAnalysisService:
-    def explain_workflow(self, script_payload: Dict[str, Any]) -> Dict[str, Any]:
-        steps: List[Dict[str, Any]] = script_payload.get("steps") or []
+    def explain_workflow(self, script_payload: dict[str, Any]) -> dict[str, Any]:
+        steps: list[dict[str, Any]] = script_payload.get("steps") or []
         step_summaries = [
             f"Step {step['step_no']}: {step.get('description') or step.get('action') or step.get('step_name')}"
             for step in steps
@@ -79,7 +79,7 @@ class ScriptAnalysisService:
                 "llm_summary_failed": True,
             }
 
-    def _generate_objective(self, script: Dict[str, Any], steps: List[Dict[str, Any]]) -> str:
+    def _generate_objective(self, script: dict[str, Any], steps: list[dict[str, Any]]) -> str:
         """
         Uses the LLM to synthesise a tight 1-2 sentence business objective for a test script
         when the database `objective` field is null.
@@ -129,9 +129,9 @@ class ScriptAnalysisService:
         except Exception as e:
             logger.warning("LLM objective generation failed: %s", e)
             return script.get('script_name', '')
-    def lookup_script(self, identifier: str) -> Dict[str, Any]:
-        from app.repositories.test_script_repository import test_script_repository
+    def lookup_script(self, identifier: str) -> dict[str, Any]:
         from app.repositories.step_repository import step_repository
+        from app.repositories.test_script_repository import test_script_repository
         from app.services.semantic_document_service import semantic_document_service
 
         script = test_script_repository.get_by_id(identifier)
@@ -166,9 +166,9 @@ class ScriptAnalysisService:
             "tool": "filtered_script_lookup",
         }
 
-    def analyze(self, identifier: str) -> Dict[str, Any]:
-        from app.repositories.test_script_repository import test_script_repository
+    def analyze(self, identifier: str) -> dict[str, Any]:
         from app.repositories.step_repository import step_repository
+        from app.repositories.test_script_repository import test_script_repository
         from app.services.semantic_document_service import semantic_document_service
 
         script = test_script_repository.get_by_id(identifier)

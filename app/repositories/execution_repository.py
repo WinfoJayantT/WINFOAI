@@ -15,15 +15,19 @@ Key Responsibilities:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
 
-from app.winfo_test_orm.models.test_run_scripts import TestRunScripts as TestRunScript
-from app.winfo_test_orm.models.test_run_script_steps import TestRunScriptSteps as TestRunScriptStep
-from app.winfo_test_orm.models.test_run_script_step_results import TestRunScriptStepResults as TestRunScriptStepResult
 from app.repositories.db import get_session
+from app.winfo_test_orm.models.test_run_script_step_results import (
+    TestRunScriptStepResults as TestRunScriptStepResult,
+)
+from app.winfo_test_orm.models.test_run_script_steps import (
+    TestRunScriptSteps as TestRunScriptStep,
+)
+from app.winfo_test_orm.models.test_run_scripts import TestRunScripts as TestRunScript
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -36,7 +40,7 @@ class ExecutionRepository:
     """
 
     # ── failure diagnostics ─────────────────────────────────────────────
-    def get_latest_failure(self, test_script_id: str) -> Optional[Dict[str, Any]]:
+    def get_latest_failure(self, test_script_id: str) -> dict[str, Any] | None:
         """
         Locates the single most recent execution of a script that failed, and returns the 
         exact step and DOM snapshot that caused the failure.
@@ -85,7 +89,7 @@ class ExecutionRepository:
             logger.warning(f"Error fetching latest failure for script {test_script_id}: {exc}")
             return None
 
-    def get_step_dom_and_locators(self, test_script_id: str) -> List[Dict[str, Any]]:
+    def get_step_dom_and_locators(self, test_script_id: str) -> list[dict[str, Any]]:
         """
         Retrieves the complete sequence of steps for the latest execution run, regardless of status.
         Includes the raw locator codes and DOM snapshots for deep AI analysis.
@@ -136,7 +140,7 @@ class ExecutionRepository:
             return []
 
     # ── telemetry aggregation ───────────────────────────────────────────
-    def get_script_execution_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def get_script_execution_metrics(self) -> dict[str, dict[str, Any]]:
         """
         Calculates aggregate execution health metrics for all scripts.
         Used primarily by the Risk Assessment Service to flag flaky automation.
@@ -149,7 +153,7 @@ class ExecutionRepository:
                 stmt = select(TestRunScript)
                 run_scripts = db.execute(stmt).scalars().all()
                 
-                metrics: Dict[str, Dict[str, Any]] = {}
+                metrics: dict[str, dict[str, Any]] = {}
                 for rs in run_scripts:
                     s_id = str(rs.test_script_id)
                     if s_id not in metrics:

@@ -1,7 +1,9 @@
-from .base import Base
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, text, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+
+from sqlalchemy import UUID, Boolean, DateTime, ForeignKey, Integer, String, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base
 
 
 class ScheduleGroupItem(Base):

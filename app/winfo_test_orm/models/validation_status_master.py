@@ -1,6 +1,7 @@
-from .base import Base
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
+
+from .base import Base
 
 
 class ValidationStatusMaster(Base):

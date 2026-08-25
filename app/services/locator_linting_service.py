@@ -1,14 +1,16 @@
 import logging
 import re
-from typing import Dict, Any, List
+from typing import Any
+
 from sqlalchemy import text
+
 from app.repositories.db import get_session
 
 logger = logging.getLogger(__name__)
 
 class LocatorLintingService:
     
-    def lint_locators(self, module: str) -> Dict[str, Any]:
+    def lint_locators(self, module: str) -> dict[str, Any]:
         """
         Scans test script steps in a module for brittle locator patterns and recommends fixes.
         """
@@ -49,7 +51,7 @@ class LocatorLintingService:
                     recommendation = ""
                     
                     # Heuristic 1: Absolute XPaths starting with /html or /body
-                    if locator.startswith("/html") or locator.startswith("/body"):
+                    if locator.startswith(("/html", "/body")):
                         issues.append("Absolute XPath")
                         recommendation = "Use relative semantic selectors (e.g., //button[@id='save'] or //input[@name='username']) instead of absolute DOM paths which break easily on UI changes."
                     

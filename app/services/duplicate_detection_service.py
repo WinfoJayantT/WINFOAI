@@ -1,6 +1,8 @@
 import logging
-from typing import Dict, Any, List
+from typing import Any
+
 from sqlalchemy import text
+
 from app.repositories.db import get_session
 from app.repositories.test_script_repository import test_script_repository
 
@@ -8,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class DuplicateDetectionService:
     
-    def detect_duplicates(self, module: str = "") -> Dict[str, Any]:
+    def detect_duplicates(self, module: str = "") -> dict[str, Any]:
         """
         Finds exact duplicate test scripts by analyzing the semantic documents and steps.
         If a module is provided, limits the search to that module.

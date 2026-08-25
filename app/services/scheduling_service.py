@@ -1,22 +1,22 @@
 import logging
-from typing import Dict, Any
-from datetime import datetime, timezone
-import uuid
 import time
+import uuid
+from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import select
 
 from app.repositories.db import get_session
+from app.repositories.test_script_repository import test_script_repository
+from app.services.debug_trace_service import debug_trace_service
 from app.winfo_test_orm.models.test_runs import TestRuns
 from app.winfo_test_orm.models.workspace import Workspace
 from app.winfo_test_orm.models.workspace_configurations import WorkspaceConfiguration
-from app.repositories.test_script_repository import test_script_repository
-from app.services.debug_trace_service import debug_trace_service
 
 logger = logging.getLogger(__name__)
 
 class SchedulingService:
-    def schedule_run(self, target_suite: str, scheduled_time: str) -> Dict[str, Any]:
+    def schedule_run(self, target_suite: str, scheduled_time: str) -> dict[str, Any]:
         """
         Schedules a test run.
         :param target_suite: The name of the suite or script to run.

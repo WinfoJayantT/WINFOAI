@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, List
+from typing import Any
 
-from sqlalchemy import select, func, desc
+from sqlalchemy import select
 
 from app.repositories.db import get_session
+from app.winfo_test_orm.models.modules import Modules
 from app.winfo_test_orm.models.test_run_scripts import TestRunScripts
 from app.winfo_test_orm.models.test_scripts import TestScripts
-from app.winfo_test_orm.models.modules import Modules
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class AnalyticsService:
             # Default to last 30 days if unclear
             return now - timedelta(days=30)
 
-    def analyze_results(self, timeframe: str = "", module: str = "", status: str = "") -> Dict[str, Any]:
+    def analyze_results(self, timeframe: str = "", module: str = "", status: str = "") -> dict[str, Any]:
         """
         Analyzes test run execution results based on natural language extracted filters.
         """

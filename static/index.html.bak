@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinfoTest AI Intelligence</title>
+
+  <!-- Preconnect and import fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // Enables class-based dark mode toggling
+      theme: {
+        extend: {
+          colors: {
+            'carbon-ink': '#1a211e',
+            'paper-white': '#ffffff',
+            'true-black': '#000000',
+            'obsidian': '#0c0c0c',
+            'fog': '#eef1f0',
+            'mist': '#e0e0e0',
+            'graphite': '#606562',
+            'ash-border': '#cccfcd',
+            'slate': '#363537',
+            'pewter': '#4e4e4e',
+            'ember-red': '#cc2e39',
+            // Dark mode surface colors
+            'dark-canvas': '#121212',
+            'dark-surface': '#1e1e1e',
+          },
+          fontFamily: {
+            'geist': ['Geist', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            'geist-mono': ['"Geist Mono"', 'ui-monospace', 'monospace'],
+            'exposure': ['"Playfair Display"', 'ui-serif', 'Georgia', 'serif'],
+            'bryant': ['"Barlow Condensed"', 'ui-sans-serif', 'sans-serif'],
+          },
+          letterSpacing: {
+            'bryant': '0.057em',
+            'exposure-lg': '-0.025em',
+          },
+          borderRadius: {
+            'nav': '4px',
+            'cards': '8px',
+            'badges': '9999px',
+            'images': '8px',
+            'inputs': '4px',
+            'buttons': '4px',
+          }
+        }
+      }
+    }
+  </script>
+
+  
+
+  <!-- Script to prevent FOUC (Flash of Unstyled Content) on load -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body
+  class="bg-paper-white dark:bg-dark-canvas text-carbon-ink dark:text-mist min-h-screen transition-colors duration-200">
+
+  <!-- Login Overlay -->
+  <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-opacity duration-300 hidden-state">
+    <div class="bg-paper-white dark:bg-dark-surface p-8 rounded-cards shadow-2xl w-full max-w-sm border border-ash-border dark:border-slate animate-fade-in-up">
+      <div class="font-bryant text-center text-xl tracking-bryant uppercase font-bold mb-6 text-carbon-ink dark:text-paper-white">
+        WinfoTest AI Copilot
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-geist-mono text-graphite dark:text-pewter mb-1 uppercase tracking-wider">Email</label>
+        <input type="email" id="login-email" class="w-full bg-fog dark:bg-obsidian border border-mist dark:border-slate rounded-inputs px-3 py-2 text-sm text-carbon-ink dark:text-paper-white focus:outline-none focus:border-graphite dark:focus:border-pewter transition-colors">
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs font-geist-mono text-graphite dark:text-pewter mb-1 uppercase tracking-wider">Password</label>
+        <input type="password" id="login-password" class="w-full bg-fog dark:bg-obsidian border border-mist dark:border-slate rounded-inputs px-3 py-2 text-sm text-carbon-ink dark:text-paper-white focus:outline-none focus:border-graphite dark:focus:border-pewter transition-colors">
+      </div>
+      <button onclick="handleLogin()" id="login-btn" class="w-full bg-true-black dark:bg-paper-white text-paper-white dark:text-true-black font-bryant text-sm tracking-bryant uppercase py-2.5 rounded-buttons font-bold hover:bg-carbon-ink dark:hover:bg-fog transition-colors motion-hover">
+        Authenticate
+      </button>
+      <div id="login-error" class="text-ember-red text-xs text-center mt-3 hidden-state">Invalid email or password.</div>
+    </div>
+  </div>
+  
+
+  <div class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Left Side: Multi-Session Conversation Sidebar (Always Dark) -->
+    <aside
+      class="w-full md:w-[320px] lg:w-[360px] bg-obsidian text-white border-b md:border-b-0 md:border-r border-[#222222] p-5 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0 overflow-hidden">
+
+      <div class="flex flex-col h-full">
+        <!-- Brand Header with Collapse Button -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="font-bryant text-white text-[11px] tracking-bryant uppercase font-bold">
+            WinfoTest // Intent Engine
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-geist-mono text-graphite">v1.0.0</span>
+            <button type="button" onclick="window.toggleSidebar()" id="sidebar-close-btn" title="Close Sidebar"
+              class="text-graphite hover:text-white p-1.5 rounded transition-colors cursor-pointer flex items-center justify-center motion-hover bg-[#141414] border border-[#282828]">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- New Chat Button -->
+        <button onclick="createNewSession()"
+          class="w-full bg-white text-obsidian border border-white rounded-nav font-bryant text-xs tracking-bryant uppercase text-center py-2.5 hover:bg-fog transition-colors duration-200 cursor-pointer font-bold flex items-center justify-center gap-2 shadow-sm motion-hover">
+          <span>+</span>
+          <span>New Chat Session</span>
+        </button>
+
+        <div class="w-full h-[1px] bg-[#222222] my-4"></div>
+
+        <!-- Previous Conversations Section -->
+        <div class="flex flex-col flex-1 overflow-hidden">
+          <div class="font-bryant text-[10px] text-graphite tracking-bryant uppercase font-bold mb-3 flex items-center justify-between">
+            <span>PREVIOUS CONVERSATIONS</span>
+            <span id="session-count-badge" class="text-[10px] font-geist-mono text-pewter">0</span>
+          </div>
+
+          <!-- Conversation List Scroll View -->
+          <div id="conversation-history-list" class="flex flex-col gap-1.5 overflow-y-auto flex-1 pr-1">
+            <div class="text-[11px] font-geist text-graphite text-center py-6">No previous chats yet. Start a new session above!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Index Action -->
+      <div class="pt-3 border-t border-[#1a1a1a] shrink-0 mt-3">
+        <button onclick="startIndexing()" id="index-btn"
+          class="w-full border border-[#333] text-[#a0a4a1] rounded-nav font-bryant text-[11px] tracking-bryant uppercase text-center py-2 hover:border-white hover:text-white transition-colors cursor-pointer font-bold bg-transparent">
+          Re-Index Vector Scripts
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- Right Side: Chat Area -->
+    <main
+      class="flex-1 flex flex-col h-screen overflow-hidden bg-paper-white dark:bg-dark-canvas transition-colors duration-200">
+
+      <!-- Primary Navigation Header -->
+      <nav
+        class="h-16 border-b border-mist dark:border-slate px-6 lg:px-8 flex items-center justify-between shrink-0 bg-white dark:bg-dark-canvas transition-colors duration-200">
+        <div class="flex items-center gap-4">
+          <button type="button" onclick="window.toggleSidebar()" id="sidebar-open-btn" title="Toggle Sidebar"
+            class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1.5 rounded border border-ash-border dark:border-[#282828] bg-fog dark:bg-[#151515] transition-colors cursor-pointer flex items-center justify-center motion-hover">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <span class="font-bryant text-slate dark:text-mist text-xs tracking-bryant uppercase font-bold">Active
+              Workspace</span>
+            <span
+              class="font-geist text-xs text-graphite dark:text-ash-border font-semibold bg-fog dark:bg-slate px-2.5 py-0.5 rounded-badges select-all">winfotest-ai</span>
+          </div>
+
+          <!-- Bento & View Navigation Tabs -->
+          <div class="flex items-center bg-fog dark:bg-[#151515] p-1 rounded-buttons border border-mist dark:border-[#282828]">
+            <button onclick="switchTab('chat')" id="tab-btn-chat"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm">
+              AI Chat
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              Analytics
+            </button>
+            <button onclick="switchTab('workbench')" id="tab-btn-workbench"
+              class="px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist">
+              ️ Workbench
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <span
+            class="hidden lg:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
+            Status: SQL Verified</span>
+
+          <!-- Theme Toggle Button -->
+          <button id="theme-toggle"
+            class="text-slate dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white transition-colors cursor-pointer p-1">
+            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                fill-rule="evenodd" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Chat Feed Scroll Container -->
+      <div id="chat-container" class="flex-1 overflow-y-auto px-8 md:px-12 py-10 flex flex-col gap-10">
+
+        <!-- Empty State Hero -->
+        <div id="empty-state"
+          class="max-w-3xl w-full mx-auto flex flex-col justify-center py-8 animate-fade-in text-left">
+
+          <h2
+            class="font-exposure text-3xl md:text-4xl text-carbon-ink dark:text-paper-white mb-4 max-w-xl transition-colors">
+            Explore test metadata —
+          </h2>
+
+          <p class="font-geist text-sm text-graphite dark:text-ash-border leading-relaxed mb-10 max-w-xl">
+            Query the vector store index or pull production data directly from PostgreSQL. Use the dynamic clustering
+            tool to organize scripts, generate regression suites, or explain workflows.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-2">
+
+            <button onclick="submitSuggested('Group scripts by process area')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Clustering</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Group scripts by process area
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Perform high-precision database token matching to classify all active test scripts.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Show supplier banking tests')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Semantic
+                Search</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Show supplier banking tests
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Search similar workflows via semantic embeddings retrieved from the Qdrant index.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Generate end-to-end regression test suite for Procure to Pay')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Suite Generation</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Generate E2E Suite for Procure to Pay
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Assemble multi-script regression workflows and detect business process coverage gaps.
+              </p>
+            </button>
+
+            <button onclick="submitSuggested('Recommend locator fixes for failed scripts')"
+              class="text-left bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards p-6 hover:border-carbon-ink dark:hover:border-mist transition-colors group cursor-pointer">
+              <span
+                class="font-bryant text-[10px] text-graphite dark:text-pewter tracking-bryant uppercase font-bold block mb-1">Self-Healing</span>
+              <span
+                class="font-geist text-sm font-semibold text-carbon-ink dark:text-paper-white group-hover:text-ember-red dark:group-hover:text-ember-red transition-colors block">
+                Recommend self-healing locator fixes
+              </span>
+              <p class="font-geist text-[11px] text-graphite dark:text-ash-border leading-relaxed mt-2">
+                Analyze fragile locators from execution failures and synthesize resilient selectors.
+              </p>
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- Chat Feed -->
+        <div id="chat-feed" class="flex flex-col gap-8 w-full max-w-3xl mx-auto hidden-state"></div>
+
+        <!-- Visible Querying Database Loading Indicator -->
+        <div id="loading-indicator"
+          class="hidden-state w-full max-w-3xl mx-auto flex items-center p-4 bg-white/90 dark:bg-dark-surface/90 border border-mist dark:border-slate rounded-cards shadow-md backdrop-blur-md animate-fade-in-up my-4 transition-all">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-ember-red opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-ember-red"></span>
+            </span>
+            <div>
+              <span id="loading-text" class="text-xs font-geist font-semibold text-carbon-ink dark:text-paper-white block">Querying PostgreSQL Database & Semantic Engine...</span>
+              <span class="text-[10px] font-geist-mono text-graphite dark:text-ash-border">Grounding test intelligence in live database telemetry</span>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- Bento Grid Analytics & Index Status View -->
+      <div id="bento-analytics-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-8 motion-fade-slide">
+        
+        <!-- View Banner -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
+          <div>
+            <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Diagnostics // Analytics</span>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Vector Index & System Bento Grid</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="fetchBentoData()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
+               Refresh Analytics
+            </button>
+            <button onclick="startIndexing()" class="px-4 py-2 bg-ember-red text-white rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-all motion-hover cursor-pointer shadow-md">
+               Re-Index Qdrant
+            </button>
+          </div>
+        </div>
+
+        <!-- Bento Grid Containers -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+          
+          <!-- Bento Box 1: Vector Store & Chunks (Large 2 Col) -->
+          <div class="md:col-span-2 bg-obsidian text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-lg flex flex-col justify-between motion-hover">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold flex items-center gap-2">
+                <span> Vector Store Chunks</span>
+              </span>
+              <span class="text-[#27c93f] cyber-glow-green font-geist-mono text-xs flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-[#27c93f] rounded-full inline-block "></span>
+                <span id="bento-qdrant-status">QDRANT ONLINE</span>
+              </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">TOTAL CHUNKS</span>
+                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-total-chunks">1,482</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">EMBEDDING DIM</span>
+                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-dim">768-d</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">METRIC</span>
+                <span class="font-geist-mono text-xl font-bold text-white cyber-glow">Cosine</span>
+              </div>
+              <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
+                <span class="text-[10px] text-graphite font-geist uppercase block mb-1">MODEL</span>
+                <span class="font-geist-mono text-xs font-bold text-white cyber-glow" id="bento-model">all-mpnet-base-v2</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-[#1a1a1a] flex justify-between items-center text-[11px] font-geist-mono text-graphite">
+              <span>Collection: <strong class="text-white select-all cyber-glow" id="bento-collection">winfotest_semantic_scripts</strong></span>
+              <span>Unit-Normalized 768-d Vector Space</span>
+            </div>
+          </div>
+
+          <!-- Bento Box 2: Indexation Synchronization -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> Index Coverage</span>
+              <span class="text-xs font-geist-mono font-bold text-carbon-ink dark:text-paper-white" id="bento-sync-pct">100%</span>
+            </div>
+            <div class="my-3">
+              <div class="flex justify-between text-xs font-geist text-graphite dark:text-ash-border mb-1">
+                <span>Synced Scripts</span>
+                <span class="font-geist-mono font-semibold text-carbon-ink dark:text-paper-white" id="bento-synced-count">42 / 42</span>
+              </div>
+              <div class="w-full bg-fog dark:bg-slate h-2.5 rounded-badges overflow-hidden">
+                <div id="bento-sync-bar" class="bg-carbon-ink dark:bg-mist h-full rounded-badges transition-all duration-500" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="text-[11px] font-geist text-graphite dark:text-ash-border flex justify-between pt-2 border-t border-mist dark:border-slate">
+              <span>Stale Chunks: <strong class="text-carbon-ink dark:text-paper-white" id="bento-stale-chunks">0</strong></span>
+              <span>DB Sync: <strong class="text-[#27c93f] cyber-glow-green">PostgreSQL</strong></span>
+            </div>
+          </div>
+
+          <!-- Bento Box 3: Repository Health Score -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Health Score</span>
+              <span class="text-xs font-geist-mono font-bold text-[#27c93f] cyber-glow-green" id="bento-health-badge">STABLE</span>
+            </div>
+            <div class="flex items-center gap-4 my-2">
+              <span class="font-exposure text-4xl font-bold text-carbon-ink dark:text-paper-white" id="bento-health-score">92</span>
+              <div class="flex flex-col text-xs font-geist text-graphite dark:text-ash-border">
+                <span>Flaky Scripts: <strong class="text-ember-red font-semibold" id="bento-flaky-count">2</strong></span>
+                <span>High Risk: <strong class="text-ember-red font-semibold" id="bento-high-risk">2</strong></span>
+              </div>
+            </div>
+            <div class="text-[11px] font-geist text-graphite dark:text-ash-border pt-2 border-t border-mist dark:border-slate">
+              <span>Calculated from historical execution telemetry</span>
+            </div>
+          </div>
+
+          <!-- Bento Box 4: Server & System Diagnostics (Large 2 Col) -->
+          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Server System Diagnostics</span>
+              <span class="text-xs font-geist-mono text-[#27c93f] cyber-glow-green font-semibold">ALL SYSTEMS ACTIVE</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">FASTAPI GATEWAY</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (8000)</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">POSTGRESQL DB</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">CONNECTED</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">QDRANT VECTOR</span>
+                <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (6333)</span>
+              </div>
+              <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">LLM ENGINE</span>
+                <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-paper-white" id="bento-llm-name">Qwen 2.5 Coder</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Box 5: AI Telemetry & Latency (Large 2 Col) -->
+          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-4">
+              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> AI Telemetry & Latency</span>
+              <span class="text-xs font-geist-mono text-carbon-ink dark:text-paper-white" id="bento-total-calls">142 Invocations</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">AVG LATENCY</span>
+                <span class="font-geist-mono text-lg font-bold text-carbon-ink dark:text-paper-white" id="bento-avg-latency">320ms</span>
+              </div>
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">SUCCESS RATE</span>
+                <span class="font-geist-mono text-lg font-bold text-[#27c93f] cyber-glow-green" id="bento-success-rate">98.6%</span>
+              </div>
+              <div class="text-center">
+                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">ERROR COUNT</span>
+                <span class="font-geist-mono text-lg font-bold text-ember-red" id="bento-error-count">0</span>
+              </div>
+            </div>
+            <div class="space-y-2 pt-2 border-t border-mist dark:border-slate">
+              <div class="flex justify-between text-[11px] font-geist text-graphite dark:text-ash-border">
+                <span>Semantic Vector Retrieval</span>
+                <span class="font-geist-mono">42%</span>
+              </div>
+              <div class="w-full bg-fog dark:bg-slate h-1.5 rounded-badges overflow-hidden">
+                <div class="bg-carbon-ink dark:bg-mist h-full" style="width: 42%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Box 6: Risk Assessment Matrix Table (Full 4 Col) -->
+          <div class="md:col-span-2 lg:col-span-4 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <div>
+                <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold block"> Predictive Risk Assessment Matrix</span>
+                <p class="font-geist text-xs text-graphite dark:text-ash-border">Identifies dynamic DOM locator flakiness and execution velocity risks</p>
+              </div>
+              <input type="text" id="risk-search-input" onkeyup="filterRiskMatrix()" placeholder="Filter by script or module..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-1.5 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs font-geist">
+                <thead>
+                  <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
+                    <th class="py-2.5 px-3">Script #</th>
+                    <th class="py-2.5 px-3">Script Name</th>
+                    <th class="py-2.5 px-3">Module</th>
+                    <th class="py-2.5 px-3 text-center">Risk Score</th>
+                    <th class="py-2.5 px-3 text-center">Tier</th>
+                    <th class="py-2.5 px-3">Fragile Step</th>
+                    <th class="py-2.5 px-3">Stabilization Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody id="risk-matrix-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                  <tr>
+                    <td colspan="7" class="py-6 text-center text-graphite dark:text-pewter font-geist-mono">Loading risk matrix telemetry...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Script Workbench View -->
+      <div id="script-workbench-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-6 motion-fade-slide">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
+          <div>
+            <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Workbench // Test Repository</span>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Script Step Inspector & Locators</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="text" id="workbench-search" onkeyup="filterWorkbenchScripts()" placeholder="Filter scripts..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-2 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+            <button onclick="loadWorkbenchScripts()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
+              Refresh Scripts
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-geist">
+              <thead>
+                <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
+                  <th class="py-2.5 px-3">Script Number</th>
+                  <th class="py-2.5 px-3">Script Name</th>
+                  <th class="py-2.5 px-3">Module</th>
+                  <th class="py-2.5 px-3">Process Area</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workbench-script-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-graphite dark:text-pewter font-geist-mono">Loading script repository...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Inspector Modal -->
+      <div id="step-modal" class="hidden-state fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 motion-fade-slide">
+        <div class="bg-white dark:bg-dark-surface border border-ash-border dark:border-slate rounded-cards max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+          <div class="p-5 border-b border-mist dark:border-slate flex justify-between items-center">
+            <div>
+              <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block" id="modal-script-num">TS-001</span>
+              <h3 class="font-exposure text-lg text-carbon-ink dark:text-paper-white font-bold" id="modal-script-title">Step Inspector</h3>
+            </div>
+            <button onclick="closeStepModal()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-1 space-y-4 font-geist text-xs" id="modal-step-content">
+            <div class="text-center py-6 text-graphite font-geist-mono">Loading step inspection details...</div>
+          </div>
+          <div class="p-4 border-t border-mist dark:border-slate flex justify-between items-center bg-fog dark:bg-[#151515]">
+            <span class="text-[11px] text-graphite dark:text-pewter font-geist-mono">WinfoTest Step Definition</span>
+            <div class="flex gap-2">
+              <button id="modal-csv-btn" class="px-4 py-2 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:opacity-90 transition-opacity cursor-pointer">
+                Download CSV
+              </button>
+              <button onclick="closeStepModal()" class="px-4 py-2 border border-ash-border dark:border-slate text-carbon-ink dark:text-mist rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold hover:bg-fog dark:hover:bg-slate transition-colors cursor-pointer">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Input Composer -->
+      <footer
+        class="p-6 border-t border-mist dark:border-slate bg-white dark:bg-dark-canvas shrink-0 transition-colors duration-200">
+        <form id="chat-form" class="max-w-3xl w-full mx-auto flex flex-col gap-2">
+          
+          <!-- Test Data Attachment Drawer -->
+          <div id="test-data-drawer" class="hidden-state p-3 bg-fog dark:bg-dark-surface border border-mist dark:border-slate rounded-cards text-xs animate-fade-in-up">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="font-bryant text-[10px] text-carbon-ink dark:text-mist uppercase tracking-bryant font-bold">Attach Scenario Test Data (JSON / Variables)</span>
+              <button type="button" onclick="toggleTestDataDrawer()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white text-xs font-bold">&times; Close</button>
+            </div>
+            <textarea id="test-data-input" rows="2"
+              class="w-full bg-white dark:bg-[#151515] border border-ash-border dark:border-[#333] rounded-inputs p-2 text-xs font-geist-mono text-carbon-ink dark:text-paper-white outline-none resize-none"
+              placeholder='{"Supplier_Name": "Oracle America Inc", "Invoice_Number": "INV-2025-001", "Invoice_Amount": "15000.00"}'></textarea>
+            <div class="flex justify-between items-center mt-2 text-[10px] text-graphite dark:text-pewter font-geist">
+              <span>Variables will be bound into <span class="font-geist-mono text-carbon-ink dark:text-mist">{{Variable}}</span> placeholders & default values.</span>
+              <div class="flex items-center gap-2">
+                <input type="file" id="test-data-file-input" accept=".json,.csv" class="hidden" onchange="handleTestDataFileUpload(this)">
+                <button type="button" onclick="document.getElementById('test-data-file-input').click()" class="text-carbon-ink dark:text-mist font-semibold hover:underline cursor-pointer">Upload .json/.csv</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 items-end">
+            <div
+              class="flex-1 bg-fog dark:bg-dark-surface border border-ash-border dark:border-slate rounded-inputs px-4 py-3 flex items-center gap-2 focus-within:border-carbon-ink dark:focus-within:border-mist transition-colors">
+              <textarea id="user-input" rows="1"
+                class="flex-1 text-base text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter outline-none bg-transparent font-geist font-normal resize-none overflow-hidden block w-full py-0 m-0 leading-[1.5]"
+                style="min-height: 24px; max-height: 180px;"
+                placeholder="Ask anything... (e.g. Generate automation steps for AP invoice)" autocomplete="off"></textarea>
+              <button type="button" onclick="toggleTestDataDrawer()" id="test-data-btn" title="Attach Test Data"
+                class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-paper-white p-1 rounded transition-colors cursor-pointer shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              </button>
+            </div>
+            <button type="submit" id="send-btn"
+              class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center h-[48px]">
+              Send Query
+            </button>
+          </div>
+        </form>
+      </footer>
+
+    </main>
+
+  </div>
+
+    
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+
+</html>

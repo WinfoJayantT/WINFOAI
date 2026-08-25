@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -9,13 +8,13 @@ class SimilarityRequest(BaseModel):
 
 
 class SimilarityMatch(BaseModel):
-    test_script_number: Optional[str] = None
+    test_script_number: str | None = None
     script_name: str
     similarity_percentage: float
     matched_by_chunk: bool = False
-    matched_chunk_attribution: Optional[str] = None
+    matched_chunk_attribution: str | None = None
 
 
 class SimilarityResponse(BaseModel):
     query_identifier: str
-    matches: List[SimilarityMatch]
+    matches: list[SimilarityMatch]

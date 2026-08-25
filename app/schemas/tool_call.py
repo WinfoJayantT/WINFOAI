@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -17,13 +17,13 @@ class ToolStatus(str, Enum):
 
 class ToolCallRequest(BaseModel):
     tool: str
-    arguments: Dict[str, Any] = {}
-    session_id: Optional[str] = None
+    arguments: dict[str, Any] = {}
+    session_id: str | None = None
 
 
 class ToolCallResult(BaseModel):
     status: ToolStatus
     tool: str
     message: str
-    data: Optional[Dict[str, Any]] = None
-    debug: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
+    debug: dict[str, Any] | None = None

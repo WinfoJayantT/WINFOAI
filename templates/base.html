@@ -15,6 +15,8 @@
 
   <!-- Tailwind CSS v3 CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Anime.js for UI Animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class', // Enables class-based dark mode toggling
@@ -123,6 +125,15 @@
             class="hidden lg:inline font-bryant text-graphite dark:text-pewter text-xs tracking-bryant uppercase font-bold">Grounding
             Status: SQL Verified</span>
 
+          <!-- Low Memory Mode Toggle Button -->
+          <button id="low-memory-toggle" title="Low Memory Mode"
+            class="flex items-center gap-2 text-slate dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white transition-colors cursor-pointer p-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span class="font-bryant text-xs uppercase tracking-bryant font-bold hidden sm:inline" id="low-memory-text">Fast Mode</span>
+          </button>
+
           <!-- Theme Toggle Button -->
           <button id="theme-toggle"
             class="text-slate dark:text-mist hover:text-carbon-ink dark:hover:text-paper-white transition-colors cursor-pointer p-1">
@@ -189,7 +200,7 @@
               </button>
             </div>
             <button type="submit" id="send-btn"
-              class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center h-[48px]">
+              class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-6 py-3 font-bryant text-xs tracking-bryant uppercase font-bold hover:opacity-90 active:scale-95 transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center h-[48px]">
               Send Query
             </button>
           </div>
@@ -200,7 +211,43 @@
 
   </div>
 
+  <!-- Floating Action Button & Mini Chat (Context-Aware) -->
+  <div id="mini-chat-container" class="fixed bottom-6 right-6 z-[9999] hidden flex flex-col items-end gap-4 pointer-events-none">
     
+    <!-- Mini Chat Panel -->
+    <div id="mini-chat-panel" class="w-80 h-96 bg-white dark:bg-dark-surface border border-mist dark:border-slate shadow-xl rounded-cards flex flex-col overflow-hidden pointer-events-auto hidden-state origin-bottom-right" style="opacity: 0; transform: scale(0.5);">
+      <!-- Header -->
+      <div class="h-10 bg-fog dark:bg-[#151515] border-b border-mist dark:border-slate flex items-center justify-between px-4 shrink-0">
+        <span class="font-bryant text-xs uppercase tracking-bryant font-bold text-carbon-ink dark:text-paper-white">Context AI</span>
+        <div class="flex items-center gap-2">
+          <button onclick="handleExpandClick()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist p-1" title="Single click: Half Screen | Double click: Main Chat">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+          </button>
+          <button onclick="toggleMiniChat()" class="text-graphite dark:text-pewter hover:text-carbon-ink dark:hover:text-mist text-lg leading-none" title="Close">&times;</button>
+        </div>
+      </div>
+      <!-- Feed -->
+      <div id="mini-chat-feed" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-sm font-geist text-carbon-ink dark:text-paper-white">
+        <!-- Initial Message -->
+        <div class="bg-fog dark:bg-[#151515] border border-mist dark:border-slate p-3 rounded-lg text-xs leading-relaxed self-start max-w-[85%]">
+          I'm observing your active context. Ask me anything about what's on your screen!
+        </div>
+      </div>
+      <!-- Input -->
+      <div class="p-3 border-t border-mist dark:border-slate bg-white dark:bg-dark-canvas shrink-0">
+        <form id="mini-chat-form" class="flex gap-2">
+          <input type="text" id="mini-user-input" class="flex-1 text-xs bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#333] rounded-inputs px-3 py-2 outline-none text-carbon-ink dark:text-paper-white placeholder-graphite dark:placeholder-pewter" placeholder="Ask about this step..." autocomplete="off">
+          <button type="submit" id="mini-send-btn" class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-buttons px-3 py-1 font-bryant text-[10px] uppercase font-bold hover:opacity-90 active:scale-95 transition-all flex items-center justify-center cursor-pointer">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FAB -->
+    <button onclick="toggleMiniChat()" id="mini-chat-fab" class="w-14 h-14 bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all pointer-events-auto cursor-pointer">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+    </button>
+  </div>
+
   <script type="module" src="/static/js/main.js"></script>
 </body>
 

@@ -1,8 +1,11 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
-import uuid
+
+from .base import Base
+
 
 class Processes(Base):
     __tablename__ = "processes"

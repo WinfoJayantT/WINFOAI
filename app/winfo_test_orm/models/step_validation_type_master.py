@@ -1,5 +1,6 @@
-from .base import Base
 from sqlalchemy import Column, String, Text
+
+from .base import Base
 
 
 class StepValidationTypeMaster(Base):

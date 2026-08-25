@@ -1,8 +1,8 @@
 # app/services/process_mapping_service.py
-import logging
 import json
+import logging
 import os
-from typing import Dict, Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class ProcessMappingService:
             logger.warning(f"Failed to load MBP mappings: {e}")
             return []
 
-    def get_mapping_for_script(self, script: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_mapping_for_script(self, script: dict[str, Any]) -> dict[str, Any] | None:
         """
         Matches a PostgreSQL test script row to an Oracle Modern Best Practice (MBP) taxonomy mapping.
         Checks script prefix (INV, SUP, PO, etc.) and text matches across process/script names.

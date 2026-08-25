@@ -16,16 +16,16 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.clients.llm_client import llm_client
+from app.core.config import settings
 from app.repositories.execution_repository import execution_repository
 from app.repositories.test_script_repository import test_script_repository
 from app.schemas.failure_analysis import (
     LocatorFixResponse,
     SelfHealingLocatorSuggestion,
 )
-from app.core.config import settings
 from app.services.debug_trace_service import debug_trace_service
 
 # ── logger initialization ───────────────────────────────────────────────
@@ -68,8 +68,8 @@ class FailureAnalysisService:
 
     # ── root cause analysis ─────────────────────────────────────────────
     def analyze_failure(
-        self, error_log: str, dom_snapshot: str = None, script_name: str = None
-    ) -> Dict[str, Any]:
+        self, error_log: str, dom_snapshot: str | None = None, script_name: str | None = None
+    ) -> dict[str, Any]:
         """
         Diagnoses a test failure log by consulting the LLM.
         
@@ -85,9 +85,8 @@ class FailureAnalysisService:
         logger.info("Analyzing Playwright failure log...")
 
         # Check if we have script information in DB
-        script = None
         if script_name:
-            script = test_script_repository.get_by_id(script_name)
+            test_script_repository.get_by_id(script_name)
 
         user_prompt = (
             f"Script Name: {script_name or 'Unknown'}\n\nERROR LOG:\n{error_log}\n"
@@ -144,7 +143,7 @@ class FailureAnalysisService:
             logger.error(f"Failure analysis failed: {e}")
             return {
                 "status": "internal_error",
-                "explanation": f"Analysis failed: {str(e)}",
+                "explanation": f"Analysis failed: {e!s}",
                 "suggested_fix": "N/A",
                 "confidence": 0.0,
                 "debug_trace": None,
@@ -152,8 +151,8 @@ class FailureAnalysisService:
 
     # ── self-healing locator generation ─────────────────────────────────
     def recommend_locator_repairs(
-        self, script_name: Optional[str] = None, error_log: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, script_name: str | None = None, error_log: str | None = None
+    ) -> dict[str, Any]:
         """
         Pulls failing step DOM state from the database and synthesizes resilient locators.
         
@@ -175,7 +174,7 @@ class FailureAnalysisService:
                 step_locators = execution_repository.get_step_dom_and_locators(str(script["id"]))
 
         # If no DB records found or generic query, construct contextual locator repairs
-        locator_repairs: List[SelfHealingLocatorSuggestion] = []
+        locator_repairs: list[SelfHealingLocatorSuggestion] = []
 
         if step_locators:
             for item in step_locators:
@@ -269,7 +268,7 @@ class FailureAnalysisService:
                                 step_no=idx,
                                 step_action="action",
                                 broken_locator=broken_loc,
-                                suggested_locator=res.get("suggested_locator", f"//button[contains(normalize-space(), 'Submit')]"),
+                                suggested_locator=res.get("suggested_locator", "//button[contains(normalize-space(), 'Submit')]"),
                                 selector_type=res.get("selector_type", "xpath"),
                                 confidence=float(res.get("confidence", 0.94)),
                                 fix_rationale=res.get("fix_rationale", "Synthesized resilient semantic locator from error log."),

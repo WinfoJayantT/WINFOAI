@@ -13,10 +13,10 @@ Key Responsibilities:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import uuid4
 
-from sqlalchemy import select, func, desc
+from sqlalchemy import desc, func, select
 
 from app.models.orm import AiToolAuditLog
 from app.repositories.db import get_session
@@ -35,16 +35,16 @@ class AuditRepository:
     def log_execution(
         self,
         tool_name: str,
-        intent: Optional[str] = None,
-        arguments_json: Optional[Dict[str, Any]] = None,
+        intent: str | None = None,
+        arguments_json: dict[str, Any] | None = None,
         status: str = "success",
         records_returned: int = 0,
         duration_ms: int = 0,
-        error_message: Optional[str] = None,
-        session_id: Optional[str] = "default",
-        user_id: Optional[str] = "system",
-        trace_id: Optional[str] = None,
-    ) -> Optional[str]:
+        error_message: str | None = None,
+        session_id: str | None = "default",
+        user_id: str | None = "system",
+        trace_id: str | None = None,
+    ) -> str | None:
         """
         Creates a new immutable audit record in the database.
         
@@ -83,7 +83,7 @@ class AuditRepository:
             return None
 
     # ── telemetry retrieval ─────────────────────────────────────────────
-    def get_recent_logs(self, limit: int = 25) -> List[Dict[str, Any]]:
+    def get_recent_logs(self, limit: int = 25) -> list[dict[str, Any]]:
         """
         Retrieves the most recent AI tool executions for frontend observability.
         """
@@ -111,7 +111,7 @@ class AuditRepository:
             logger.error(f"Failed to fetch recent audit logs: {exc}")
             return []
 
-    def get_telemetry_summary(self) -> Dict[str, Any]:
+    def get_telemetry_summary(self) -> dict[str, Any]:
         """
         Calculates aggregate statistics across all AI tool executions.
         

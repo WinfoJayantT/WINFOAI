@@ -10,10 +10,11 @@ widget, and handles background pre-loading of the embedding models during startu
 import logging
 import threading
 from contextlib import asynccontextmanager
-from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -64,6 +65,11 @@ async def lifespan(app: FastAPI):
     # Run embedding warmup in background so server starts instantly
     warmup_thread = threading.Thread(target=_warmup_embeddings, daemon=True, name="embedding-warmup")
     warmup_thread.start()
+    
+    # Start the Predictive Oracle Patch Analyzer Bot
+    from app.services.oracle_patch_bot_service import oracle_patch_bot_service
+    oracle_patch_bot_service.start_bot()
+    
     yield
 
 
@@ -130,7 +136,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-async def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
+async def verify_api_key(api_key: str | None = Security(api_key_header)):
     """
     FastAPI dependency that enforces API key authentication when API_KEY_HEADER is configured.
     In local mode (API_KEY_HEADER is None/empty), all requests are allowed through.
@@ -151,15 +157,17 @@ class ChatRequest(BaseModel):
     Pydantic schema for standard AI chat requests coming from the UI widget.
     """
     message: str
-    session_id: Optional[str] = "default"
-    test_data: Optional[Dict[str, Any]] = None
+    session_id: str | None = "default"
+    test_data: dict[str, Any] | None = None
+    active_context: dict[str, Any] | None = None
+    low_memory_mode: bool = False
 
 
 class ExportCsvRequest(BaseModel):
     """
     Pydantic schema for exporting an array of steps to a CSV file download.
     """
-    steps: list[Dict[str, Any]]
+    steps: list[dict[str, Any]]
 
 
 class IndexRequest(BaseModel):
@@ -188,7 +196,7 @@ async def serve_frontend(request: Request):
 
 
 @app.post("/api/v1/chat")
-async def chat(request: ChatRequest) -> Dict[str, Any]:
+async def chat(request: ChatRequest) -> dict[str, Any]:
     """
     Synchronous Chat Endpoint.
     
@@ -197,7 +205,7 @@ async def chat(request: ChatRequest) -> Dict[str, Any]:
     """
     try:
         result = tool_registry_service.handle_chat(
-            request.message, session_id=request.session_id
+            request.message, session_id=request.session_id, active_context=request.active_context, low_memory_mode=request.low_memory_mode
         )
         return result
     except Exception as exc:
@@ -215,7 +223,7 @@ async def chat_stream(request: ChatRequest):
     """
     return StreamingResponse(
         tool_registry_service.stream_chat(
-            request.message, session_id=request.session_id, test_data=request.test_data
+            request.message, session_id=request.session_id, test_data=request.test_data, active_context=request.active_context, low_memory_mode=request.low_memory_mode
         ),
         media_type="text/event-stream"
     )
@@ -226,8 +234,8 @@ async def get_chat_history(session_id: str = "default"):
     Fetch chat history for the session.
     """
     try:
-        from app.repositories.db import SessionLocal
         from app.models.orm import AiChatMessage
+        from app.repositories.db import SessionLocal
         db = SessionLocal()
         messages = db.query(AiChatMessage).filter(
             AiChatMessage.session_id == session_id
@@ -250,8 +258,9 @@ async def export_steps_csv(req: ExportCsvRequest):
     """
     Accepts JSON steps and returns a formatted CSV file attachment for download.
     """
-    from app.services.step_generation_service import step_generation_service
     from fastapi.responses import Response
+
+    from app.services.step_generation_service import step_generation_service
     csv_str = step_generation_service.export_steps_to_csv(req.steps)
     return Response(
         content=csv_str,
@@ -261,7 +270,7 @@ async def export_steps_csv(req: ExportCsvRequest):
 
 
 @app.post("/api/v1/index")
-async def trigger_indexing(req: IndexRequest = IndexRequest()) -> Dict[str, Any]:
+async def trigger_indexing(req: IndexRequest = IndexRequest()) -> dict[str, Any]:
     """
     Triggers an asynchronous rebuild of the Qdrant semantic vector index
     using data from the PostgreSQL `test_scripts` table.
@@ -275,7 +284,7 @@ async def trigger_indexing(req: IndexRequest = IndexRequest()) -> Dict[str, Any]
 
 
 @app.post("/api/v1/heal-locator")
-async def heal_locator(req: HealLocatorRequest) -> Dict[str, Any]:
+async def heal_locator(req: HealLocatorRequest) -> dict[str, Any]:
     """
     Interactive Self-Healing: instantly patches a script's broken locator in the database.
     """
@@ -292,7 +301,7 @@ async def heal_locator(req: HealLocatorRequest) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/index/status")
-async def indexing_status() -> Dict[str, Any]:
+async def indexing_status() -> dict[str, Any]:
     """
     Returns the real-time progress (processed vs total scripts) of an active indexing job.
     """
@@ -305,7 +314,7 @@ async def indexing_status() -> Dict[str, Any]:
 
 
 @app.get("/api/v1/analytics/audit")
-async def get_audit_telemetry() -> Dict[str, Any]:
+async def get_audit_telemetry() -> dict[str, Any]:
     """
     Exposes system usage telemetry, token consumption, and success/failure rates
     for the AI analytics dashboard.
@@ -319,19 +328,19 @@ async def get_audit_telemetry() -> Dict[str, Any]:
 
 
 @app.get("/api/v1/analytics/overview")
-async def get_bento_overview() -> Dict[str, Any]:
+async def get_bento_overview() -> dict[str, Any]:
     """
     Exposes comprehensive Bento Grid metrics including Qdrant vector chunk count, 
     embedding dimensionality, PostgreSQL script indexation status, system health score,
     and server diagnostic statuses.
     """
     try:
-        from app.repositories.test_script_repository import test_script_repository
-        from app.repositories.audit_repository import audit_repository
-        from app.services.vector_store_service import vector_store_service
-        from app.services.risk_assessment_service import risk_assessment_service
-        from app.schemas.test_risk import RiskAssessmentRequest
         from app.core.config import settings
+        from app.repositories.audit_repository import audit_repository
+        from app.repositories.test_script_repository import test_script_repository
+        from app.schemas.test_risk import RiskAssessmentRequest
+        from app.services.risk_assessment_service import risk_assessment_service
+        from app.services.vector_store_service import vector_store_service
 
         # 1. Fetch total scripts from PostgreSQL
         all_scripts = test_script_repository.list_all()
@@ -393,13 +402,13 @@ async def get_bento_overview() -> Dict[str, Any]:
 
 
 @app.get("/api/v1/analytics/risk")
-async def get_risk_matrix(query: Optional[str] = None) -> Dict[str, Any]:
+async def get_risk_matrix(query: str | None = None) -> dict[str, Any]:
     """
     Exposes full risk assessment matrix payload for the Analytics view.
     """
     try:
-        from app.services.risk_assessment_service import risk_assessment_service
         from app.schemas.test_risk import RiskAssessmentRequest
+        from app.services.risk_assessment_service import risk_assessment_service
         return risk_assessment_service.assess_risk(RiskAssessmentRequest(filter_query=query))
     except Exception as exc:
         logger.exception("Error fetching risk matrix")
@@ -407,7 +416,7 @@ async def get_risk_matrix(query: Optional[str] = None) -> Dict[str, Any]:
 
 
 @app.get("/api/v1/clusters/duplicates")
-async def get_duplicate_clusters(module: Optional[str] = None) -> Dict[str, Any]:
+async def get_duplicate_clusters(module: str | None = None) -> dict[str, Any]:
     """
     Exposes Semantic Duplicate Detection clustering.
     """
@@ -420,7 +429,7 @@ async def get_duplicate_clusters(module: Optional[str] = None) -> Dict[str, Any]
 
 
 @app.get("/api/v1/audit/locators")
-async def get_locator_audit(module: str = "All Modules") -> Dict[str, Any]:
+async def get_locator_audit(module: str = "All Modules") -> dict[str, Any]:
     """
     Exposes Locator Linting audit for a specific module.
     """
@@ -433,7 +442,7 @@ async def get_locator_audit(module: str = "All Modules") -> Dict[str, Any]:
 
 
 @app.get("/api/v1/scripts")
-async def list_scripts() -> Dict[str, Any]:
+async def list_scripts() -> dict[str, Any]:
     """
     Exposes list of all test scripts for the Step & Script Workbench view.
     """
@@ -447,7 +456,7 @@ async def list_scripts() -> Dict[str, Any]:
 
 
 @app.get("/api/v1/scripts/{script_id}/steps")
-async def get_script_steps(script_id: str) -> Dict[str, Any]:
+async def get_script_steps(script_id: str) -> dict[str, Any]:
     """
     Direct PostgreSQL step lookup for the Workbench step inspector.
     Queries ordered steps directly without triggering LLM latency.

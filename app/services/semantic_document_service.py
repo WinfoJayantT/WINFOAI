@@ -18,10 +18,11 @@ Key Capabilities:
     back to a deterministic string formatter (`generate_local_semantic_document`) if the LLM is down.
 """
 
-import logging
 import json
+import logging
 import os
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from app.clients.llm_client import llm_client
 from app.core.config import settings
 
@@ -58,7 +59,7 @@ class SemanticDocumentService:
         self.client = client or llm_client
         self._mbp_mappings = self._load_mbp_mappings()
         
-    def _load_mbp_mappings(self) -> List[Dict[str, Any]]:
+    def _load_mbp_mappings(self) -> list[dict[str, Any]]:
         """Loads static mapping of Winfo modules to standard Oracle Modern Best Practices."""
         try:
             config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'oracle_mbp_mappings.json')
@@ -68,7 +69,7 @@ class SemanticDocumentService:
             logger.warning(f"Failed to load MBP mappings from config/oracle_mbp_mappings.json: {e}")
             return []
 
-    def _is_valid_semantic_document(self, text: Optional[str]) -> bool:
+    def _is_valid_semantic_document(self, text: str | None) -> bool:
         """Heuristically checks if the LLM followed the strict 5-section markdown structure."""
         if not text or len(text.strip()) < 100:
             return False
@@ -85,7 +86,7 @@ class SemanticDocumentService:
 
     # ── llm generation ──────────────────────────────────────────────────
     def generate_semantic_document(
-        self, script_data: Dict[str, Any], steps: List[Dict[str, Any]]
+        self, script_data: dict[str, Any], steps: list[dict[str, Any]]
     ) -> str:
         """
         Invokes the configured LLM to generate a deep-context narrative document.
@@ -151,7 +152,7 @@ Ordered Workflow Steps:
 
     # ── local generation fallback ───────────────────────────────────────
     def generate_local_semantic_document(
-        self, script_data: Dict[str, Any], steps: List[Dict[str, Any]]
+        self, script_data: dict[str, Any], steps: list[dict[str, Any]]
     ) -> str:
         """
         Deterministically formats the 5-section semantic document natively in Python 
@@ -207,7 +208,7 @@ Ordered Workflow Steps:
 
     # ── caching entrypoint ──────────────────────────────────────────────
     def get_or_create_semantic_document(
-        self, script_data: Dict[str, Any], steps: List[Dict[str, Any]], only_allow_cache: bool = False
+        self, script_data: dict[str, Any], steps: list[dict[str, Any]], only_allow_cache: bool = False
     ) -> str:
         """
         Retrieves a pre-computed document from PostgreSQL if it exists, otherwise generates it

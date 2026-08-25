@@ -1,10 +1,9 @@
-import logging
-import time
 import json
+import logging
 import os
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any
 
-from app.clients.llm_client import llm_client
 from app.repositories.test_script_repository import test_script_repository
 from app.schemas.test_suite import (
     CoverageGapItem,
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 class TestSuiteService:
     """Generates structured E2E regression test suites and detects ERP business process coverage gaps."""
     
-    def _load_mbp_mappings(self) -> List[Dict[str, Any]]:
+    def _load_mbp_mappings(self) -> list[dict[str, Any]]:
         try:
             config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'oracle_mbp_mappings.json')
             with open(config_path, 'r') as f:
@@ -32,7 +31,7 @@ class TestSuiteService:
 
     def generate_suite(
         self, request: TestSuiteRequest, session_id: str = "default"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         start_time = time.time()
         logger.info(f"Generating test suite for request: {request} in session: {session_id}")
         
@@ -72,8 +71,8 @@ class TestSuiteService:
             relevant_scripts = all_scripts[:5]
 
         # Order scripts logically into sequential workflow steps
-        execution_steps: List[TestSuiteStepItem] = []
-        selected_script_ids: List[str] = []
+        execution_steps: list[TestSuiteStepItem] = []
+        selected_script_ids: list[str] = []
 
         for idx, script in enumerate(relevant_scripts[:25], start=1):
             s_id = str(script.get("id") or script.get("test_script_number"))
@@ -92,7 +91,7 @@ class TestSuiteService:
             )
 
         # Detect coverage gaps from MBP mappings
-        coverage_gaps: List[CoverageGapItem] = []
+        coverage_gaps: list[CoverageGapItem] = []
         for mapping in matching_mappings:
             if not mapping.get("is_covered", True):
                 coverage_gaps.append(

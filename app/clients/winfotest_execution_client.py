@@ -6,13 +6,12 @@ NOT call Playwright or any execution engine directly (section 35).
 
 import logging
 import uuid
-from typing import List
 
 logger = logging.getLogger(__name__)
 
 
 class WinfoTestExecutionClient:
-    def run_test_group(self, test_script_ids: List[str]) -> dict:
+    def run_test_group(self, test_script_ids: list[str]) -> dict:
         logger.warning(
             "run_test_group called but WinfoTest execution integration is not yet implemented. "
             "No tests were executed. script_ids=%s", test_script_ids,

@@ -1,4 +1,3 @@
-from typing import List
 
 from pydantic import BaseModel
 
@@ -9,5 +8,5 @@ class IndexingRequest(BaseModel):
 
 class IndexingResponse(BaseModel):
     scope: str
-    indexed_script_ids: List[str]
-    failed_script_ids: List[str]
+    indexed_script_ids: list[str]
+    failed_script_ids: list[str]

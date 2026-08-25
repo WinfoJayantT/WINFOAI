@@ -1,7 +1,9 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
+
+from .base import Base
 
 
 class MasterStep(Base):

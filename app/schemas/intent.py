@@ -1,6 +1,7 @@
 # STREAMING_CHUNK:Defining intent schema and resilient pydantic validation...
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -20,6 +21,7 @@ class IntentName(str, Enum):
     ANALYZE_TEST_RESULTS = "analyze_test_results"
     DETECT_DUPLICATES = "detect_duplicates"
     LINT_LOCATORS = "lint_locators"
+    ANALYZE_ORACLE_PATCH = "analyze_oracle_patch"
     UNKNOWN = "unknown"
 
 
@@ -27,20 +29,20 @@ class IntentRequest(BaseModel):
     user_query: str = Field(
         ..., description="The natural language query from the user."
     )
-    conversation_context: Optional[Dict[str, Any]] = Field(
+    conversation_context: dict[str, Any] | None = Field(
         default=None, description="Optional conversation state context."
     )
-    app_context: Optional[Dict[str, Any]] = Field(
+    app_context: dict[str, Any] | None = Field(
         default=None, description="Optional active application state context from the frontend UI."
     )
 
 
 class IntentResult(BaseModel):
     intent: IntentName = Field(..., description="The classified intent enum.")
-    tool: Optional[str] = Field(
+    tool: str | None = Field(
         default=None, description="The name of the backend tool to execute."
     )
-    arguments: Dict[str, Any] = Field(
+    arguments: dict[str, Any] = Field(
         default_factory=dict, description="Extracted arguments for the tool."
     )
     confidence: float = Field(

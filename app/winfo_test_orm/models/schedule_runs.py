@@ -1,8 +1,10 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import uuid
+
+from .base import Base
 
 
 class ScheduleRuns(Base):

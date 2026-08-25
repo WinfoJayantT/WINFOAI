@@ -15,7 +15,7 @@ Key Responsibilities:
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.repositories.execution_repository import execution_repository
 from app.repositories.test_script_repository import test_script_repository
@@ -39,7 +39,7 @@ class RiskAssessmentService:
     # ── primary risk assessment algorithm ───────────────────────────────
     def assess_risk(
         self, request: RiskAssessmentRequest, session_id: str = "default"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Evaluates the automation health of the test repository.
         
@@ -76,7 +76,7 @@ class RiskAssessmentService:
         if not filtered_scripts:
             filtered_scripts = all_scripts
 
-        risk_items: List[ScriptRiskItem] = []
+        risk_items: list[ScriptRiskItem] = []
 
         # 4. Calculate Risk Heuristics per Script
         for idx, s in enumerate(filtered_scripts):

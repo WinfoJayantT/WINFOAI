@@ -20,7 +20,7 @@ generates the complete WinfoTest UI automation step sequence:
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import text
 
@@ -92,9 +92,9 @@ class StepGenerationService:
         self,
         scenario: str,
         process_area: str = "",
-        test_data: Optional[Dict[str, Any]] = None,
+        test_data: dict[str, Any] | None = None,
         limit: int = 3,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Dynamically generates WinfoTest steps for *scenario* using vector few-shot
         RAG grounded in PostgreSQL master_steps, with optional test_data variable binding.
@@ -171,7 +171,7 @@ class StepGenerationService:
         }
 
     # ── csv export formatting ───────────────────────────────────────────
-    def export_steps_to_csv(self, steps: List[Dict[str, Any]]) -> str:
+    def export_steps_to_csv(self, steps: list[dict[str, Any]]) -> str:
         """
         Exports generated JSON steps to a 100% WinfoTest-compliant CSV format string.
         """
@@ -212,7 +212,7 @@ class StepGenerationService:
         scenario: str,
         process_area: str,
         limit: int,
-    ) -> tuple[List[Dict], List[str]]:
+    ) -> tuple[list[dict], list[str]]:
         """
         Retrieves the top semantically similar test script using Qdrant dense vector
         search, then reloads its authentic steps from PostgreSQL master_steps.
@@ -225,8 +225,8 @@ class StepGenerationService:
         Returns:
             Tuple containing the List of examples and List of source script IDs.
         """
-        examples: List[Dict] = []
-        source_ids: List[str] = []
+        examples: list[dict] = []
+        source_ids: list[str] = []
 
         search_query = f"{scenario} {process_area}".strip()
         if not search_query:
@@ -274,7 +274,7 @@ class StepGenerationService:
     # ── sql step fetching ───────────────────────────────────────────────
     def _fetch_steps_for_script(
         self, conn, script_id: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Try to pull steps from `master_steps`, then fall back to `test_run_script_steps`.
         Uses raw SQLAlchemy queries for speed and exact ordering.
@@ -324,13 +324,13 @@ class StepGenerationService:
         self,
         scenario: str,
         process_area: str,
-        examples: List[Dict],
-        test_data: Optional[Dict[str, Any]] = None,
+        examples: list[dict],
+        test_data: dict[str, Any] | None = None,
     ) -> str:
         """
         Constructs the final prompt combining the few-shot examples and user context.
         """
-        parts: List[str] = []
+        parts: list[str] = []
 
         if examples:
             parts.append("=== REFERENCE ORACLE STEPS FROM GOLDEN TEST MASTER ===")
@@ -361,14 +361,14 @@ class StepGenerationService:
     # Response parsing & validation
     # ──────────────────────────────────────────────────────────────────────────
     def _parse_steps(
-        self, raw: str, test_data: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+        self, raw: str, test_data: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Parses pipe-delimited lines (or fallback JSON) into structured step objects.
         Enriches actions with input_type, locator_code, default_value, and assigns sequential step numbers.
         """
         clean = raw.strip()
-        parsed_steps: List[Dict[str, Any]] = []
+        parsed_steps: list[dict[str, Any]] = []
 
         # Normalization lookup for test_data keys
         data_lookup = {}
@@ -443,7 +443,7 @@ class StepGenerationService:
                 pass
 
         # 3. Assign sequential step numbers and infer Playwright locator_code, input_type, and strict input_parameter / default_value
-        final_steps: List[Dict[str, Any]] = []
+        final_steps: list[dict[str, Any]] = []
         for i, st in enumerate(parsed_steps, start=1):
             act = st["action"]
             target = st["target_element"].strip()

@@ -1,8 +1,10 @@
-from .base import Base
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+import uuid
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import uuid
+
+from .base import Base
 
 
 class TestRunScriptStepResults(Base):

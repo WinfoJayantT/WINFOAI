@@ -1,10 +1,9 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from app.core.config import settings
 from app.repositories.audit_repository import audit_repository
 from app.services.indexing_service import indexing_service
-from app.services.vector_store_service import vector_store_service
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AuditAnalyticsService:
     """Provides aggregated enterprise telemetry, audit trail reporting, and vector index health metrics."""
 
-    def get_dashboard_telemetry(self) -> Dict[str, Any]:
+    def get_dashboard_telemetry(self) -> dict[str, Any]:
         try:
             telemetry = audit_repository.get_telemetry_summary()
             recent_logs = audit_repository.get_recent_logs(limit=15)
