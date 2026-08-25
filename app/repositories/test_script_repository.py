@@ -16,14 +16,12 @@ Key Responsibilities:
 """
 
 import logging
-import re
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import text
 
-from app.core.config import settings
 from app.repositories.db import engine
 
 # ── logger initialization ───────────────────────────────────────────────
@@ -211,6 +209,43 @@ class TestScriptRepository:
         except Exception as exc:
             logger.error("Failed to get script by id %s: %s", script_id, exc)
             return None
+
+    def get_by_ids(self, script_ids: list) -> dict:
+        """
+        Efficiently fetches a batch of test scripts by their UUIDs in a single SQL query.
+        
+        Args:
+            script_ids (list): List of script ID strings.
+            
+        Returns:
+            dict: Mapping of str(script_id) -> serialized script dict.
+        """
+        if not script_ids:
+            return {}
+        try:
+            with engine.connect() as conn:
+                processes = self._get_processes(conn)
+                query = """
+                    SELECT s.*, 
+                           m.module_name as module, 
+                           pa.process_area_name as process_area 
+                    FROM test_scripts s
+                    LEFT JOIN modules m ON s.module_id::text = m.module_id::text
+                    LEFT JOIN process_areas pa ON m.process_area_id::text = pa.process_area_id::text
+                    WHERE s.test_script_id::text = ANY(:ids) AND s.is_deleted = false
+                """
+                result = conn.execute(text(query), {"ids": [str(sid) for sid in script_ids]})
+                rows = result.mappings().all()
+                
+                lookup = {}
+                for row in rows:
+                    d = _serialize_row(dict(row))
+                    d["process"] = _match_process(d, processes)
+                    lookup[str(d.get("test_script_id") or d.get("id"))] = d
+                return lookup
+        except Exception as exc:
+            logger.error("Failed to batch get scripts: %s", exc)
+            return {}
 
     def get_script_by_identifier(self, identifier: str) -> dict:
         """Alias for get_by_id."""

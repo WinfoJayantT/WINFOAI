@@ -1,4 +1,3 @@
-from typing import List
 
 from pydantic import BaseModel
 
@@ -13,4 +12,4 @@ class SemanticSearchRequest(BaseModel):
 
 class SemanticSearchResponse(BaseModel):
     query: str
-    results: List[SimilarityMatch]
+    results: list[SimilarityMatch]

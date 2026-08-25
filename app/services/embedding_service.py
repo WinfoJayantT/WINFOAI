@@ -10,10 +10,11 @@ blocking PyTorch CPU loads.
 """
 
 import logging
-from typing import List, Optional
+
 import numpy as np
-from app.core.config import settings
+
 from app.clients.llm_client import LLMClient
+from app.core.config import settings
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -26,14 +27,14 @@ class EmbeddingService:
     and queries using Ollama's local API (via the OpenAI SDK wrapper).
     """
 
-    def __init__(self, model_name: Optional[str] = None, dimension: Optional[int] = None):
+    def __init__(self, model_name: str | None = None, dimension: int | None = None):
         # We default to the settings, but this will now look for Ollama models (e.g. nomic-embed-text)
         self.model_name = model_name or settings.EMBEDDING_MODEL_NAME
         self.dimension = dimension or settings.EMBEDDING_DIMENSION
         self.llm = LLMClient()
 
     # ── encoding operations ─────────────────────────────────────────────
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """
         Generates a dense vector for a single input text string using Ollama/OpenAI API.
         
@@ -69,7 +70,7 @@ class EmbeddingService:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
-    def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """
         Efficiently generates dense vectors for a large batch of texts over the API.
         

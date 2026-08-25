@@ -14,10 +14,7 @@ Key Responsibilities:
 """
 
 import logging
-from typing import Any, Dict, List
-from sqlalchemy import text
-from app.core.config import settings
-from app.repositories.db import engine
+from typing import Any
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -29,7 +26,7 @@ class GroupingRepository:
     Data Access Object (DAO) for rapid, deterministic text-based script retrieval.
     """
 
-    def get_dynamic_related_records(self) -> List[Dict[str, Any]]:
+    def get_dynamic_related_records(self) -> list[dict[str, Any]]:
         """
         Retrieves all test scripts from PostgreSQL source of truth.
         (Delegates to test_script_repository to avoid duplicated joins).
@@ -41,7 +38,7 @@ class GroupingRepository:
             logger.error("Failed to query test_scripts: %s", exc)
             return []
 
-    def search_by_tokens(self, concept: str) -> List[Dict[str, Any]]:
+    def search_by_tokens(self, concept: str) -> list[dict[str, Any]]:
         """
         Performs high-precision database filtering for concept keywords across script 
         identifiers and names.

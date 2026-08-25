@@ -15,7 +15,7 @@ Key Responsibilities:
 import json
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.schemas.debug import DebugTrace
 
@@ -57,13 +57,13 @@ class DebugTraceService:
 
     def build_trace(
         self,
-        intent: Optional[str] = None,
-        tool_name: Optional[str] = None,
-        parsed_args: Optional[Dict[str, Any]] = None,
-        repo_path: Optional[str] = None,
-        execution_time_ms: Optional[int] = None,
-        warnings: Optional[List[str]] = None,
-        errors: Optional[List[str]] = None,
+        intent: str | None = None,
+        tool_name: str | None = None,
+        parsed_args: dict[str, Any] | None = None,
+        repo_path: str | None = None,
+        execution_time_ms: int | None = None,
+        warnings: list[str] | None = None,
+        errors: list[str] | None = None,
     ) -> DebugTrace:
         """
         Utility method to build a fully hydrated trace in a single step (used primarily by legacy endpoints).

@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from app.repositories.test_script_repository import test_script_repository
 from app.repositories.step_repository import step_repository
+from app.repositories.test_script_repository import test_script_repository
 from app.services.embedding_service import embedding_service
 from app.services.semantic_document_service import semantic_document_service
 from app.services.vector_store_service import vector_store_service
@@ -10,7 +10,7 @@ from app.services.vector_store_service import vector_store_service
 class SimilarityService:
     """Section 12.3: compares semantic workflow meaning, not script numbers."""
 
-    def find_similar(self, identifier: str, limit: int = 5) -> Dict[str, Any]:
+    def find_similar(self, identifier: str, limit: int = 5) -> dict[str, Any]:
         script = test_script_repository.get_script_by_identifier(identifier)
         if script is None:
             return {"status": "not_found", "matches": []}

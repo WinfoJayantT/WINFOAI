@@ -1,7 +1,9 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Column, Integer
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
+
+from .base import Base
 
 
 class CaseNumberSequence(Base):

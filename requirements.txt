@@ -14,5 +14,7 @@ openai>=1.40.0
 httpx
 pytest
 pytest-asyncio
-
 jinja2
+apscheduler
+beautifulsoup4
+requests

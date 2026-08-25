@@ -1,5 +1,7 @@
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class TestScriptLabels(BaseModel):
     test_script_label_id: str

@@ -1,7 +1,9 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Column, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-import uuid
+
+from .base import Base
 
 
 class RecordingSession(Base):

@@ -16,16 +16,16 @@ Key Responsibilities:
 
 import logging
 import threading
-from typing import Any, Dict, List
+from typing import Any
 
+from app.core.config import settings
 from app.repositories.index_repository import index_repository
 from app.repositories.step_repository import step_repository
 from app.repositories.test_script_repository import test_script_repository
 from app.services.embedding_service import embedding_service
+from app.services.process_mapping_service import process_mapping_service
 from app.services.semantic_document_service import semantic_document_service
 from app.services.vector_store_service import vector_store_service
-from app.services.process_mapping_service import process_mapping_service
-from app.core.config import settings
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class IndexingService:
         self._lock = threading.Lock()
 
     # ── synchronous indexing entries ────────────────────────────────────
-    def index_all(self, fast_mode: bool = True) -> Dict[str, Any]:
+    def index_all(self, fast_mode: bool = True) -> dict[str, Any]:
         """
         Synchronously indexes all known scripts in the database.
         
@@ -72,7 +72,7 @@ class IndexingService:
             with self._lock:
                 self.is_indexing = False
 
-    def index_stale(self) -> Dict[str, Any]:
+    def index_stale(self) -> dict[str, Any]:
         """
         Synchronously indexes only scripts that have not been indexed with the current model version.
         """
@@ -95,7 +95,7 @@ class IndexingService:
                 self.is_indexing = False
 
     # ── asynchronous triggering ─────────────────────────────────────────
-    def trigger_asynchronous_index(self, fast_mode: bool = True) -> Dict[str, Any]:
+    def trigger_asynchronous_index(self, fast_mode: bool = True) -> dict[str, Any]:
         """
         Spawns a daemon thread to execute `index_all`, allowing the HTTP request to return immediately.
         
@@ -125,7 +125,7 @@ class IndexingService:
             "indexing_in_progress": True
         }
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Returns the real-time progress of the active indexing thread.
         """
@@ -137,84 +137,107 @@ class IndexingService:
             }
 
     # ── core orchestration loop ─────────────────────────────────────────
-    def _index_ids(self, script_ids: List[str], fast_mode: bool = True) -> Dict[str, Any]:
+    def _index_ids(self, script_ids: list[str], fast_mode: bool = True, batch_size: int = 64) -> dict[str, Any]:
         """
-        The core pipeline loop that pulls, documents, embeds, and pushes scripts to Qdrant.
+        High-throughput batch pipeline that pulls, documents, embeds, and pushes scripts to Qdrant
+        in vectorized chunks of 64 scripts per database/embedding/upsert round-trip.
         """
-        indexed: List[str] = []
-        failed: List[str] = []
+        indexed: list[str] = []
+        failed: list[str] = []
 
         with self._lock:
             self.total_scripts = len(script_ids)
             self.processed_scripts = 0
 
-        for script_id in script_ids:
+        # Process in chunks of batch_size (e.g. 64 scripts per round-trip)
+        for i in range(0, len(script_ids), batch_size):
+            chunk_ids = script_ids[i:i + batch_size]
             try:
-                # 1. Pull raw script and ordered steps
-                script = test_script_repository.get_by_id(script_id)
-                if script is None:
-                    failed.append(script_id)
-                    with self._lock:
-                        self.processed_scripts += 1
-                    continue
-
-                steps = step_repository.get_ordered_steps(script_id)
-
-                # 2. Generate Semantic Document
-                if settings.is_llm_configured and not fast_mode:
-                    doc = semantic_document_service.generate_semantic_document(
-                        script, steps
-                    )
-                    generated_by = "llm"
-                else:
-                    doc = semantic_document_service.generate_local_semantic_document(
-                        script, steps
-                    )
-                    generated_by = "deterministic_fallback"
-
-                # 3. Generate Dense Embedding Vector
-                vector = embedding_service.embed_text(doc)
-
-                # 4. Resolve Oracle Modern Best Practice (MBP) mappings
-                mapping = process_mapping_service.get_mapping_for_script(script)
-                mbp_metadata = {}
-                if mapping:
-                    mbp_metadata = {
-                        "l1_process": mapping["l1_process"],
-                        "l2_process": mapping["l2_process"],
-                        "product_mix": mapping["product_mix"],
-                        "is_covered": mapping["is_covered"]
-                    }
-
-                # 5. Push payload to Qdrant
-                vector_store_service.upsert_script(
-                    script_id=script_id,
-                    test_script_number=script.get("test_script_number") or "N/A",
-                    script_name=script.get("script_name") or script.get("name") or "N/A",
-                    semantic_document=doc,
-                    vector=vector,
-                    metadata={
-                        "module": script.get("module"),
-                        "process": script.get("process"),
-                        **mbp_metadata
-                    },
-                )
+                # 1. Bulk fetch scripts from PostgreSQL in 1 query
+                scripts_map = test_script_repository.get_by_ids(chunk_ids)
                 
-                # 6. Update PostgreSQL sync records
-                index_repository.record_semantic_document(script_id, doc, generated_by)
-                index_repository.record_index_status(
-                    script_id, settings.EMBEDDING_MODEL_NAME, len(vector)
-                )
+                # 2. Bulk fetch ordered steps for all scripts in chunk in 1 query
+                steps_map = step_repository.get_ordered_steps_for_scripts(chunk_ids)
                 
-                indexed.append(script_id)
-                with self._lock:
-                    self.processed_scripts += 1
+                # 3. Generate Semantic Documents in memory
+                docs_to_embed: list[str] = []
+                valid_items: list[dict[str, Any]] = []
+                
+                for sid in chunk_ids:
+                    script = scripts_map.get(str(sid))
+                    if not script:
+                        failed.append(sid)
+                        continue
                     
+                    steps = steps_map.get(str(sid), [])
+                    
+                    if settings.is_llm_configured and not fast_mode:
+                        try:
+                            doc = semantic_document_service.generate_semantic_document(script, steps)
+                            generated_by = "llm"
+                        except Exception:
+                            doc = semantic_document_service.generate_local_semantic_document(script, steps)
+                            generated_by = "deterministic_fallback"
+                    else:
+                        doc = semantic_document_service.generate_local_semantic_document(script, steps)
+                        generated_by = "deterministic_fallback"
+                    
+                    mapping = process_mapping_service.get_mapping_for_script(script)
+                    mbp_metadata = {}
+                    if mapping:
+                        mbp_metadata = {
+                            "l1_process": mapping["l1_process"],
+                            "l2_process": mapping["l2_process"],
+                            "product_mix": mapping["product_mix"],
+                            "is_covered": mapping["is_covered"]
+                        }
+                    
+                    item = {
+                        "script_id": sid,
+                        "test_script_number": script.get("test_script_number") or "N/A",
+                        "script_name": script.get("script_name") or script.get("name") or "N/A",
+                        "semantic_document": doc,
+                        "generated_by": generated_by,
+                        "metadata": {
+                            "module": script.get("module"),
+                            "process": script.get("process"),
+                            **mbp_metadata
+                        }
+                    }
+                    valid_items.append(item)
+                    docs_to_embed.append(doc)
+
+                if valid_items:
+                    # 4. Batch Vector Embedding via GPU/Ollama in 1 single matrix call
+                    vectors = embedding_service.embed_batch(docs_to_embed)
+                    
+                    for idx, it in enumerate(valid_items):
+                        it["vector"] = vectors[idx]
+
+                    # 5. Bulk Upsert points into Qdrant in 1 single API call
+                    vector_store_service.upsert_batch_scripts(valid_items)
+
+                    # 6. Bulk Record sync status in PostgreSQL in 1 single transaction
+                    status_records = [
+                        {
+                            "script_id": it["script_id"],
+                            "document": it["semantic_document"],
+                            "generated_by": it["generated_by"],
+                            "model_name": settings.EMBEDDING_MODEL_NAME,
+                            "dimension": len(it["vector"]),
+                        }
+                        for it in valid_items
+                    ]
+                    index_repository.record_batch_index_status(status_records)
+
+                    indexed.extend([it["script_id"] for it in valid_items])
+
             except Exception as exc:
-                logger.exception("Indexing failed for script_id=%s", script_id)
-                failed.append(script_id)
+                logger.exception("Batch indexing failed for chunk starting at index %d: %s", i, exc)
+                failed.extend(chunk_ids)
+            finally:
                 with self._lock:
-                    self.processed_scripts += 1
+                    self.processed_scripts += len(chunk_ids)
 
         return {"indexed_script_ids": indexed, "failed_script_ids": failed}
 

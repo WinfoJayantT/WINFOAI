@@ -64,5 +64,10 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
+# Pre-download the cross-encoder model so it is baked into the image.
+# This prevents runtime delays and avoids HuggingFace download failures
+# in restricted network environments.
+RUN python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')" || true
+
 # Production ASGI server launch command
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

@@ -1,8 +1,10 @@
-from .base import Base
+import uuid
+
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-import uuid
 from sqlalchemy.orm import relationship
+
+from .base import Base
 
 
 class Streams(Base):

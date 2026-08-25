@@ -1,5 +1,7 @@
 
-    // ── Global Sidebar Toggle Control ──
+    // ── Global Context & Sidebar Toggle Control ──
+    window.activeAIContext = null;
+
     window.toggleSidebar = function() {
       const sidebar = document.querySelector('aside');
       if (sidebar) {
@@ -45,6 +47,29 @@
     });
     // --- End Theme Toggle Logic ---
 
+    // --- Low Memory Mode Toggle Logic ---
+    const lowMemoryToggleBtn = document.getElementById('low-memory-toggle');
+    const lowMemoryText = document.getElementById('low-memory-text');
+    
+    window.lowMemoryMode = localStorage.getItem('lowMemoryMode') === 'true';
+    if (window.lowMemoryMode) {
+      lowMemoryText.textContent = 'Low Mem Mode';
+      lowMemoryToggleBtn.classList.add('text-ember-red');
+    }
+
+    lowMemoryToggleBtn.addEventListener('click', function () {
+      window.lowMemoryMode = !window.lowMemoryMode;
+      localStorage.setItem('lowMemoryMode', window.lowMemoryMode);
+      
+      if (window.lowMemoryMode) {
+        lowMemoryText.textContent = 'Low Mem Mode';
+        lowMemoryToggleBtn.classList.add('text-ember-red');
+      } else {
+        lowMemoryText.textContent = 'Fast Mode';
+        lowMemoryToggleBtn.classList.remove('text-ember-red');
+      }
+    });
+
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatFeed = document.getElementById('chat-feed');
@@ -53,7 +78,7 @@
     const sendBtn = document.getElementById('send-btn');
     const chatContainer = document.getElementById('chat-container');
 
-    function submitSuggested(text) {
+    window.submitSuggested = function(text) {
       userInput.value = text;
       chatForm.dispatchEvent(new Event('submit'));
     }
@@ -224,7 +249,7 @@
     }
 
 
-    async function startIndexing() {
+    window.startIndexing = async function() {
       const indexBtn = document.getElementById('index-btn');
       indexBtn.disabled = true;
       const originalText = indexBtn.textContent;
@@ -438,7 +463,10 @@
               `;
             });
 
+            const suiteMessage = content.message ? `<div class="mb-4 text-sm text-carbon-ink dark:text-mist font-geist">${escapeHtml(content.message)}</div>` : '';
+
             displayHtml = `
+              ${suiteMessage}
               <div class="w-full bg-white dark:bg-dark-surface border border-mist dark:border-slate rounded-cards p-8 font-geist text-left transition-colors">
                 <div class="flex justify-between items-center mb-4 pb-4 border-b border-mist dark:border-slate">
                   <div>
@@ -1234,13 +1262,18 @@
       chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
 
       try {
+        const payload = { 
+            message: message,
+            test_data: testDataPayload
+        };
+        if (window.activeAIContext) {
+            payload.active_context = window.activeAIContext;
+        }
+
         const response = await fetch("/api/v1/chat/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            message: message,
-            test_data: testDataPayload
-          })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -1452,13 +1485,19 @@
         if (chatView) chatView.classList.remove('hidden-state');
         if (inputFooter) inputFooter.classList.remove('hidden-state');
         if (btnChat) btnChat.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+        const miniChatContainer = document.getElementById('mini-chat-container');
+        if (miniChatContainer) miniChatContainer.classList.add('hidden');
       } else if (tabName === 'analytics') {
         if (analyticsView) analyticsView.classList.remove('hidden-state');
         if (btnAnalytics) btnAnalytics.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+        const miniChatContainer = document.getElementById('mini-chat-container');
+        if (miniChatContainer) miniChatContainer.classList.remove('hidden');
         fetchBentoData();
       } else if (tabName === 'workbench') {
         if (workbenchView) workbenchView.classList.remove('hidden-state');
         if (btnWorkbench) btnWorkbench.className = "px-3 py-1 rounded-[3px] font-bryant text-xs uppercase tracking-bryant font-bold transition-all duration-200 cursor-pointer bg-white dark:bg-dark-surface text-carbon-ink dark:text-paper-white shadow-sm";
+        const miniChatContainer = document.getElementById('mini-chat-container');
+        if (miniChatContainer) miniChatContainer.classList.remove('hidden');
         loadWorkbenchScripts();
       }
     };
@@ -1672,6 +1711,10 @@
       if (script) {
         document.getElementById('modal-script-num').innerText = script.test_script_number || 'TS-001';
         document.getElementById('modal-script-title').innerText = script.script_name || script.name || 'Step Inspection';
+        
+        // Update AI Context
+        window.activeAIContext = { type: 'script', id: script.id, name: script.script_name || script.name };
+        console.log("Active AI Context set to:", window.activeAIContext);
       }
 
       modal.classList.remove('hidden-state');
@@ -1693,13 +1736,23 @@
         const data = await res.json();
 
         const stepsArr = data.steps || [];
+        if (window.activeAIContext && window.activeAIContext.id === scriptId) {
+          // Send a simplified version of the steps to the AI so it doesn't hallucinate
+          window.activeAIContext.steps = stepsArr.map(s => ({
+             step_num: s.step_sequence || s.step_number,
+             action: s.action || s.keyword,
+             target: s.target || s.object_name,
+             value: s.value || s.input_value
+          }));
+        }
+        
         if (stepsArr.length === 0) {
           content.innerHTML = `<div class="p-6 text-center text-graphite font-geist-mono">No steps found in PostgreSQL master_steps or test_run_script_steps for this script.</div>`;
           return;
         }
 
         content.innerHTML = stepsArr.map((st, i) => `
-          <div class="p-3 bg-[#0d0d0d] border border-[#222] rounded-cards flex flex-col gap-1.5 font-geist">
+          <div class="step-item p-3 bg-[#0d0d0d] border border-[#222] rounded-cards flex flex-col gap-1.5 font-geist opacity-0" style="transform: translateY(16px);">
             <div class="flex justify-between items-center">
               <span class="font-geist-mono font-bold text-white text-xs">Step ${st.step_no || i+1}: <span class="uppercase text-[#27c93f]">${escapeHtml(st.step_action || st.action || 'ACTION')}</span></span>
               <span class="font-geist-mono text-[10px] text-[#a0a4a1] bg-[#1a1a1a] px-2 py-0.5 rounded-badges border border-[#333]">${escapeHtml(st.input_parameter || 'No Input Value')}</span>
@@ -1707,6 +1760,18 @@
             <p class="text-xs text-[#d1d5db] leading-relaxed">${escapeHtml(st.step_description || 'Step execution.')}</p>
           </div>
         `).join('');
+
+        if (typeof anime !== 'undefined') {
+          anime({
+            targets: '.step-item',
+            translateY: [16, 0],
+            opacity: [0, 1],
+            delay: anime.stagger(40),
+            duration: 600,
+            easing: 'easeOutQuart'
+          });
+        }
+
 
         document.getElementById('modal-csv-btn').onclick = function() {
           downloadWinfoTestCSV({
@@ -1748,6 +1813,8 @@
 
     window.closeStepModal = function() {
       document.getElementById('step-modal').classList.add('hidden-state');
+      // Clear AI context when modal closes (optional, depending on desired UX)
+      // window.activeAIContext = null; 
     };
 
     // Restore persistent chat history & saved active tab on page load
@@ -1760,3 +1827,263 @@
         switchTab(savedTab);
       }
     });
+
+    // ── Mini Chat Feature ──
+    window.miniChatSessionId = null;
+
+    let expandClickTimer = null;
+    let isHalfScreen = false;
+
+    window.handleExpandClick = function() {
+      if (expandClickTimer) {
+        clearTimeout(expandClickTimer);
+        expandClickTimer = null;
+        expandMiniChatFull();
+      } else {
+        expandClickTimer = setTimeout(() => {
+          expandClickTimer = null;
+          toggleHalfScreen();
+        }, 250);
+      }
+    };
+
+    window.toggleHalfScreen = function() {
+      const panel = document.getElementById('mini-chat-panel');
+      const fab = document.getElementById('mini-chat-fab');
+      isHalfScreen = !isHalfScreen;
+      
+      if (typeof anime !== 'undefined') {
+        anime({
+          targets: panel,
+          width: isHalfScreen ? '45vw' : '20rem',
+          height: isHalfScreen ? '85vh' : '24rem',
+          bottom: isHalfScreen ? '7.5vh' : '6rem',
+          duration: 600,
+          easing: 'spring(1, 80, 10, 0)'
+        });
+        
+        if (fab) {
+          anime({
+            targets: fab,
+            opacity: isHalfScreen ? 0 : 1,
+            scale: isHalfScreen ? 0 : 1,
+            duration: 300,
+            easing: 'easeOutQuad',
+            complete: () => {
+              if (isHalfScreen) {
+                fab.style.pointerEvents = 'none';
+              } else {
+                fab.style.pointerEvents = 'auto';
+              }
+            }
+          });
+        }
+        
+        // Find step-modal's wrapper and adjust padding so flexbox centers it naturally without overflowing left
+        const stepModal = document.getElementById('step-modal');
+        if (stepModal && !stepModal.classList.contains('hidden-state')) {
+          anime({
+            targets: stepModal,
+            paddingRight: isHalfScreen ? '45vw' : '1rem',
+            duration: 600,
+            easing: 'spring(1, 80, 10, 0)'
+          });
+        }
+      }
+    };
+
+    window.expandMiniChatFull = function() {
+      toggleMiniChat();
+      if (isHalfScreen) toggleHalfScreen(); // reset it back
+      
+      // Close the step inspector modal if it is open
+      const stepModal = document.getElementById('step-modal');
+      if (stepModal) stepModal.classList.add('hidden-state');
+
+      switchTab('chat');
+      
+      if (window.miniChatSessionId) {
+        // Set the active session to the one we just started in the mini chat
+        currentSessionId = window.miniChatSessionId;
+        localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
+        window.miniChatSessionId = null; // Reset for next mini chat usage
+      }
+
+      const miniInput = document.getElementById('mini-user-input');
+      const mainInput = document.getElementById('user-input');
+      if (miniInput && mainInput && miniInput.value.trim() !== '') {
+        mainInput.value = miniInput.value;
+        miniInput.value = '';
+        mainInput.focus();
+      }
+      if (typeof loadChatHistory === 'function') {
+        loadChatHistory();
+        renderSidebarConversations();
+      }
+    };
+
+    window.toggleMiniChat = function() {
+      const panel = document.getElementById('mini-chat-panel');
+      if (panel.classList.contains('hidden-state')) {
+        panel.classList.remove('hidden-state');
+        // HeroUI-inspired bouncy spring animation
+        if (typeof anime !== 'undefined') {
+          anime({
+            targets: panel,
+            scale: [0.5, 1],
+            opacity: [0, 1],
+            duration: 800,
+            easing: 'spring(1, 80, 10, 0)'
+          });
+        } else {
+          panel.style.opacity = '1';
+          panel.style.transform = 'scale(1)';
+        }
+        document.getElementById('mini-user-input').focus();
+      } else {
+        if (isHalfScreen) toggleHalfScreen();
+        if (typeof anime !== 'undefined') {
+          anime({
+            targets: panel,
+            scale: [1, 0.5],
+            opacity: [1, 0],
+            duration: 250,
+            easing: 'easeInQuad',
+            complete: () => {
+              panel.classList.add('hidden-state');
+            }
+          });
+        } else {
+          panel.style.opacity = '0';
+          panel.style.transform = 'scale(0.5)';
+          panel.classList.add('hidden-state');
+        }
+      }
+    };
+
+    const miniChatForm = document.getElementById('mini-chat-form');
+    if (miniChatForm) {
+      miniChatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const miniInput = document.getElementById('mini-user-input');
+        const query = miniInput.value.trim();
+        if (!query) return;
+
+        const feed = document.getElementById('mini-chat-feed');
+        miniInput.value = '';
+
+        // Render user message
+        const userHtml = `<div class="bg-carbon-ink dark:bg-mist text-white dark:text-carbon-ink p-3 rounded-lg text-xs leading-relaxed self-end max-w-[85%] font-semibold">${escapeHtml(query)}</div>`;
+        feed.insertAdjacentHTML('beforeend', userHtml);
+        feed.scrollTop = feed.scrollHeight;
+
+        // Render loading animation
+        const loadingId = 'loading-' + Date.now();
+        const loadingHtml = `<div id="${loadingId}" class="bg-fog dark:bg-[#151515] border border-mist dark:border-slate p-3 rounded-lg text-xs self-start text-graphite dark:text-pewter flex items-center gap-2">
+                               <div class="w-1.5 h-1.5 bg-graphite dark:bg-pewter rounded-full animate-bounce"></div>
+                               <div class="w-1.5 h-1.5 bg-graphite dark:bg-pewter rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                               <div class="w-1.5 h-1.5 bg-graphite dark:bg-pewter rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                             </div>`;
+        feed.insertAdjacentHTML('beforeend', loadingHtml);
+        feed.scrollTop = feed.scrollHeight;
+
+        try {
+          // Save user query instantly to active session
+          let currentSessions = getAllSessions();
+          if (window.currentSessionId && currentSessions[window.currentSessionId]) {
+            currentSessions[window.currentSessionId].messages.push({ role: 'user', content: query });
+            saveSessions(currentSessions);
+          }
+          
+          const reqBody = { message: query, session_id: window.currentSessionId || 'default', low_memory_mode: window.lowMemoryMode };
+          if (window.activeAIContext) {
+            reqBody.active_context = window.activeAIContext;
+          }
+
+          const response = await fetch('/api/v1/chat/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reqBody)
+          });
+
+          const loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.remove();
+
+          if (!response.ok) throw new Error('API Error');
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          let botMessageHtml = '';
+          const msgId = 'bot-' + Date.now();
+          
+          feed.insertAdjacentHTML('beforeend', `<div id="${msgId}" class="bg-fog dark:bg-[#151515] border border-mist dark:border-slate p-3 rounded-lg text-xs leading-relaxed self-start max-w-[85%]"></div>`);
+          const msgEl = document.getElementById(msgId);
+          feed.scrollTop = feed.scrollHeight;
+          let buffer = '';
+
+          let toolResults = [];
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // keep incomplete line
+            
+            for (let line of lines) {
+              line = line.trim();
+              if (line.startsWith('data: ')) {
+                const dataStr = line.replace('data: ', '');
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.type === 'token') {
+                    botMessageHtml += data.content;
+                    // Format markdown if available, else escape
+                    if (typeof formatMarkdownToHtml === 'function') {
+                      msgEl.innerHTML = formatMarkdownToHtml(botMessageHtml);
+                    } else {
+                      msgEl.innerHTML = escapeHtml(botMessageHtml).replace(/\n/g, '<br>');
+                    }
+                    feed.scrollTop = feed.scrollHeight;
+                  } else if (data.type === 'done') {
+                    if (data.results && data.results.length > 0) {
+                       toolResults = data.results;
+                       let resHtml = `<div class="mt-2 text-[10px] text-graphite dark:text-pewter italic">Executed tool: ${escapeHtml(data.results[0].tool)}</div>`;
+                       
+                       // Try to format explanations or text results directly if available
+                       if (data.results[0].explanation) {
+                           resHtml += `<div class="mt-2 text-carbon-ink dark:text-paper-white text-xs leading-relaxed">${formatMarkdownToHtml ? formatMarkdownToHtml(data.results[0].explanation) : escapeHtml(data.results[0].explanation)}</div>`;
+                       } else if (data.results[0].generated_steps) {
+                           resHtml += `<div class="mt-2 text-carbon-ink dark:text-paper-white text-xs leading-relaxed">Generated ${data.results[0].generated_steps.length} steps. Open in main chat for full view.</div>`;
+                       } else {
+                           resHtml += `<div class="mt-2 bg-[#151515] p-2 rounded max-h-40 overflow-y-auto"><pre class="text-[10px] text-ash-border whitespace-pre-wrap">${escapeHtml(JSON.stringify(data.results[0], null, 2))}</pre></div>`;
+                       }
+                       
+                       msgEl.insertAdjacentHTML('beforeend', resHtml);
+                       feed.scrollTop = feed.scrollHeight;
+                    }
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+          
+          // Save to local storage for persistence when expanded
+          const finalSessions = getAllSessions();
+          if (window.currentSessionId && finalSessions[window.currentSessionId]) {
+            // Check if explanation exists
+            if (toolResults.length > 0) {
+                finalSessions[window.currentSessionId].messages.push({ role: 'assistant', content: toolResults[0] });
+            } else {
+                finalSessions[window.currentSessionId].messages.push({ role: 'assistant', content: botMessageHtml });
+            }
+            saveSessions(finalSessions);
+          }
+        } catch (error) {
+          const loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.remove();
+          feed.insertAdjacentHTML('beforeend', `<div class="bg-fog dark:bg-[#151515] border border-mist dark:border-slate p-3 rounded-lg text-xs leading-relaxed self-start text-ember-red">Error: Could not connect to AI service.</div>`);
+        }
+      });
+    }

@@ -1,6 +1,7 @@
-from .base import Base
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
+
+from .base import Base
 
 
 class ScriptTypeMaster(Base):

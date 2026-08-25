@@ -16,7 +16,8 @@ Key Responsibilities:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
@@ -33,7 +34,7 @@ class VectorStoreService:
     """
 
     def __init__(self):
-        self._client: Optional[QdrantClient] = None
+        self._client: QdrantClient | None = None
 
     # ── connection lifecycle ────────────────────────────────────────────
     @property
@@ -63,7 +64,7 @@ class VectorStoreService:
                     f"Could not connect to Qdrant server ({e}). Falling back to local embedded storage ('./qdrant_local_db')."
                 )
                 self._client = QdrantClient(path="./qdrant_local_db")
-                setattr(self._client, "_is_local", True)
+                self._client._is_local = True
         return self._client
 
     # ── schema provisioning ─────────────────────────────────────────────
@@ -93,8 +94,8 @@ class VectorStoreService:
         test_script_number: str,
         script_name: str,
         semantic_document: str,
-        vector: List[float],
-        metadata: Dict[str, Any],
+        vector: list[float],
+        metadata: dict[str, Any],
     ):
         """
         Upserts a highly-dimensional vector and its associated textual payload into the index.
@@ -144,7 +145,7 @@ class VectorStoreService:
                         except:
                             pass
                     self._client = QdrantClient(path="./qdrant_local_db")
-                    setattr(self._client, "_is_local", True)
+                    self._client._is_local = True
                 self.ensure_collection()
                 self._client.upsert(
                     collection_name=settings.QDRANT_COLLECTION,
@@ -163,18 +164,81 @@ class VectorStoreService:
                     ],
                 )
                 logger.info(f"Successfully upserted script {test_script_number} using local fallback.")
-            except Exception as local_exc:
-                logger.error(f"Local Qdrant upsert failed: {local_exc}")
+            except Exception as inner_exc:
+                logger.error(f"Local fallback upsert also failed: {inner_exc}")
+                raise RuntimeError(f"All upsert attempts failed: {inner_exc}")
+
+    def upsert_batch_scripts(self, items: list[dict[str, Any]]):
+        """
+        Upserts an entire batch of script points into Qdrant in a single bulk API call.
+        
+        Args:
+            items (List[Dict]): List of dicts containing:
+                - script_id (str)
+                - test_script_number (str)
+                - script_name (str)
+                - semantic_document (str)
+                - vector (List[float])
+                - metadata (Dict)
+        """
+        if not items:
+            return
+            
+        points = [
+            models.PointStruct(
+                id=str(it["script_id"]),
+                vector=it["vector"],
+                payload={
+                    "script_id": str(it["script_id"]),
+                    "test_script_number": it.get("test_script_number") or "N/A",
+                    "script_name": it.get("script_name") or "N/A",
+                    "semantic_document": it.get("semantic_document") or "",
+                    **(it.get("metadata") or {}),
+                },
+            )
+            for it in items
+        ]
+        
+        try:
+            self.ensure_collection()
+            self.client.upsert(
+                collection_name=settings.QDRANT_COLLECTION,
+                points=points,
+            )
+        except Exception as exc:
+            if settings.ENV == "production":
+                logger.error(f"Batch upsert failed on remote Qdrant in production: {exc}")
+                raise RuntimeError(f"Qdrant batch upsert failed in production: {exc}")
+            
+            logger.warning(f"Batch upsert failed: {exc}. Retrying with local fallback...")
+            try:
+                if not getattr(self._client, "_is_local", False):
+                    if hasattr(self._client, "close"):
+                        try:
+                            self._client.close()
+                        except:
+                            pass
+                    self._client = QdrantClient(path="./qdrant_local_db")
+                    self._client._is_local = True
+                self.ensure_collection()
+                self._client.upsert(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    points=points,
+                )
+                logger.info(f"Successfully upserted {len(points)} scripts using local fallback.")
+            except Exception as inner_exc:
+                logger.error(f"Local fallback batch upsert failed: {inner_exc}")
+                raise RuntimeError(f"All batch upsert attempts failed: {inner_exc}")
 
     # ── retrieval operations ────────────────────────────────────────────
     def search_similar(
         self,
-        query_vector: Optional[List[float]] = None,
-        vector: Optional[List[float]] = None,
+        query_vector: list[float] | None = None,
+        vector: list[float] | None = None,
         limit: int = 5,
-        query_filter: Optional[Any] = None,
+        query_filter: Any | None = None,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Executes a K-Nearest Neighbors (KNN) search to find the most semantically similar points.
         
@@ -224,7 +288,7 @@ class VectorStoreService:
                         except:
                             pass
                     self._client = QdrantClient(path="./qdrant_local_db")
-                    setattr(self._client, "_is_local", True)
+                    self._client._is_local = True
                 self.ensure_collection()
                 if hasattr(self.client, "search"):
                     results = self.client.search(

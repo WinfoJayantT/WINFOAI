@@ -16,16 +16,17 @@ Key Responsibilities:
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from qdrant_client.http import models as qdrant_models
 
-from app.services.embedding_service import embedding_service
-from app.services.vector_store_service import vector_store_service
-from app.repositories.test_script_repository import test_script_repository
 from app.repositories.grouping_repository import grouping_repository
 from app.repositories.step_repository import step_repository
-from app.services.semantic_document_service import semantic_document_service
+from app.repositories.test_script_repository import test_script_repository
 from app.services.debug_trace_service import debug_trace_service
+from app.services.embedding_service import embedding_service
+from app.services.semantic_document_service import semantic_document_service
+from app.services.vector_store_service import vector_store_service
 
 # ── logger initialization ───────────────────────────────────────────────
 logger = logging.getLogger(__name__)
@@ -43,8 +44,8 @@ class SemanticSearchService:
         query: str,
         limit: int = 5,
         include_steps: bool = False,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Executes a dual-pipeline semantic search.
         

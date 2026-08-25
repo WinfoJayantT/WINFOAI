@@ -16,8 +16,10 @@ Key Responsibilities:
 
 import logging
 import uuid
-from typing import Any, List, Optional
+from typing import Any
+
 from sqlalchemy import text
+
 from app.core.config import settings
 from app.repositories.db import engine
 
@@ -105,7 +107,7 @@ class IndexRepository:
                 "Failed to record semantic document in ai_semantic_documents: %s", exc
             )
 
-    def get_semantic_document(self, script_id: str) -> Optional[dict]:
+    def get_semantic_document(self, script_id: str) -> dict | None:
         """
         Retrieves the most recently generated semantic document for a given script.
         """
@@ -157,7 +159,60 @@ class IndexRepository:
                 "Failed to record index status in ai_vector_index_status: %s", exc
             )
 
-    def list_all_script_ids(self) -> List[str]:
+    def record_batch_index_status(self, records: list[dict[str, Any]]):
+        """
+        Records the successful indexing of a batch of scripts in a single database transaction.
+        
+        Args:
+            records (List[Dict]): List of dicts with keys: script_id, document, generated_by, model_name, dimension.
+        """
+        if not records:
+            return
+        self._ensure_ai_tables()
+        try:
+            with engine.connect() as conn:
+                doc_params = [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "script_id": str(r["script_id"]),
+                        "document": r["document"],
+                        "generated_by": r.get("generated_by", "deterministic_fallback"),
+                    }
+                    for r in records
+                ]
+                status_params = [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "script_id": str(r["script_id"]),
+                        "model_name": r.get("model_name", settings.EMBEDDING_MODEL_NAME),
+                        "dimension": r.get("dimension", settings.EMBEDDING_DIMENSION),
+                    }
+                    for r in records
+                ]
+                
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO ai_semantic_documents (id, test_script_id, semantic_document, generated_by)
+                        VALUES (CAST(:id AS UUID), CAST(:script_id AS UUID), :document, :generated_by)
+                        """
+                    ),
+                    doc_params,
+                )
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO ai_vector_index_status (id, test_script_id, embedding_model, dimension)
+                        VALUES (CAST(:id AS UUID), CAST(:script_id AS UUID), :model_name, :dimension)
+                        """
+                    ),
+                    status_params,
+                )
+                conn.commit()
+        except Exception as exc:
+            logger.warning("Failed to record batch index status in PostgreSQL: %s", exc)
+
+    def list_all_script_ids(self) -> list[str]:
         """
         Retrieves all active script IDs from the master table for bulk indexing.
         """
@@ -169,7 +224,7 @@ class IndexRepository:
             logger.error("Failed to list script ids: %s", exc)
             return []
 
-    def list_stale_script_ids(self) -> List[str]:
+    def list_stale_script_ids(self) -> list[str]:
         """
         Retrieves scripts that have not been indexed yet, or were indexed by an older model.
         (Currently aliases list_all_script_ids until delta logic is required).

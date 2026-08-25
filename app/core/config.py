@@ -17,7 +17,7 @@ Key Responsibilities:
 
 import logging
 from functools import lru_cache
-from typing import Optional
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # ── security & access control ──
     # API_KEY_HEADER: If set, all API requests must include 'X-API-Key: <value>'.
     # Leave empty to disable auth (local dev only).
-    API_KEY_HEADER: Optional[str] = None
+    API_KEY_HEADER: str | None = None
 
     # CORS_ORIGINS: Comma-separated list of allowed origins for the CORS middleware.
     # Example: "https://winfotest.app,https://staging.winfotest.app"

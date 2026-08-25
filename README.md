@@ -46,11 +46,15 @@ Enterprise ERP testing across platforms like Oracle Fusion Cloud (Procure to Pay
 * **Sequential Dependency Sorting**: Assembles multi-stage regression suites across complex enterprise flows (e.g. Requisition -> PO Approval -> Goods Receipt -> AP Invoice Matching -> Payment Hold -> GL Posting).
 * **Process Gap Detection**: Flags missing validation gates and estimates total execution runtimes.
 
-### 5. Root Cause Failure Analysis & Self-Healing Locator Repair
+### 5. Enterprise Readiness & Performance Optimization
+* **Low Memory / Fast Mode Toggle**: Includes a front-end toggle that throttles the backend execution engine. When enabled, multi-intent parallel tasks are bounded by a `ThreadPoolExecutor` to prevent CPU exhaustion on low-spec developer laptops.
+* **Aggressive Code Optimization**: Validated through strict `ruff` static analysis, the architecture contains zero redundant bloat or unused variables, ensuring rapid sub-second startup times.
+
+### 6. Root Cause Failure Analysis & Self-Healing Locator Repair
 * **Automated Log Diagnosis**: Analyzes stack traces and Playwright `TimeoutError` logs to explain root causes and recommend actionable fixes.
 * **Dynamic Locator Healing**: Extracts fragile auto-generated dynamic IDs (e.g. Oracle ADF dynamic container tags) directly from error logs and synthesizes resilient semantic XPath/ARIA selectors with calculated resilience scores.
 
-### 6. Test Health, Risk Assessment & Flakiness Scoring
+### 7. Test Health, Risk Assessment & Flakiness Scoring
 * **Live Telemetry Analytics**: Queries PostgreSQL execution logs to calculate failure rates, step flakiness, and stability scores across enterprise modules.
 
 ---

@@ -13,11 +13,11 @@ Key Responsibilities:
   2. Transaction Contexts: Provides the `get_session` context manager for safe commit/rollback lifecycles.
 """
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 

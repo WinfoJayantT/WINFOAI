@@ -13,11 +13,16 @@ import json
 import logging
 import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from app.repositories.audit_repository import audit_repository
 from app.schemas.cluster import ClusterRequest
-from app.schemas.intent import IntentName, IntentRequest, IntentResult, MultiIntentResult
+from app.schemas.intent import (
+    IntentName,
+    IntentRequest,
+    MultiIntentResult,
+)
 from app.schemas.test_risk import RiskAssessmentRequest
 from app.schemas.test_suite import TestSuiteRequest
 from app.services.execution_orchestration_service import execution_orchestration_service
@@ -48,7 +53,7 @@ class ToolRegistryService:
 
     # ── streaming chat dispatch ─────────────────────────────────────────
     async def stream_chat(
-        self, user_query: str, session_id: str = "default", test_data: dict[str, Any] | None = None
+        self, user_query: str, session_id: str = "default", test_data: dict[str, Any] | None = None, active_context: dict[str, Any] | None = None, low_memory_mode: bool = False
     ) -> Generator[str, None, None]:
         """
         Processes a chat query and yields an SSE stream of status tokens and the final JSON payload.
@@ -65,13 +70,22 @@ class ToolRegistryService:
         logger.info(f"Streaming chat query: '{user_query}' for session: {session_id}")
 
         try:
-            from app.repositories.db import SessionLocal
-            from app.models.orm import AiChatMessage
             import uuid
+
+            from app.models.orm import AiChatMessage, AiConversationSession
+            from app.repositories.db import SessionLocal
             
             # Save user query to history
             try:
                 db = SessionLocal()
+                
+                # Ensure the session exists in the DB to satisfy foreign key constraint
+                session_obj = db.query(AiConversationSession).filter(AiConversationSession.session_id == session_id).first()
+                if not session_obj:
+                    session_obj = AiConversationSession(session_id=session_id)
+                    db.add(session_obj)
+                    db.commit()
+
                 new_msg = AiChatMessage(
                     id=uuid.uuid4(),
                     session_id=session_id,
@@ -101,6 +115,20 @@ class ToolRegistryService:
             except Exception as e:
                 logger.error(f"Failed to fetch history: {e}")
 
+            if active_context:
+                if test_data is None:
+                    test_data = {}
+                test_data["active_context"] = active_context
+                if active_context.get("type") == "script" and active_context.get("id"):
+                    from app.repositories.test_script_repository import (
+                        test_script_repository,
+                    )
+                    script_id = active_context.get("id")
+                    full_script = test_script_repository.get_by_id(script_id)
+                    if full_script:
+                        test_data["active_script_details"] = full_script
+                        logger.info(f"Injected active script context for {script_id}")
+
             # 1. Resolve Intent
             intent_request = IntentRequest(
                 user_query=user_query, 
@@ -120,8 +148,8 @@ class ToolRegistryService:
                     f"Routed intent: {intent_res.intent} -> tool: {intent_res.tool} (Confidence: {intent_res.confidence})"
                 )
                 
-                # Check confidence thresholding
-                if intent_res.confidence < 0.70 or intent_res.tool == "unknown" or intent_res.intent == IntentName.UNKNOWN:
+                # Check confidence thresholding (0.60 threshold aligns with Cross-Encoder survival)
+                if intent_res.confidence < 0.60 or intent_res.tool == "unknown" or intent_res.intent == IntentName.UNKNOWN:
                     ambiguous_intents.append(intent_res)
                     return None
                     
@@ -130,8 +158,9 @@ class ToolRegistryService:
                     args_to_pass["test_data"] = test_data
 
                 # Execute target service tool concurrently in a thread
+                executor = ThreadPoolExecutor(max_workers=2) if low_memory_mode else None
                 res = await loop.run_in_executor(
-                    None, self.execute_tool, intent_res.tool, args_to_pass, session_id
+                    executor, self.execute_tool, intent_res.tool, args_to_pass, session_id
                 )
                 if isinstance(res, dict):
                     res.setdefault("tool", intent_res.tool)
@@ -214,83 +243,23 @@ class ToolRegistryService:
 
 
     # ── synchronous chat dispatch ───────────────────────────────────────
-    def handle_chat(
-        self, user_query: str, session_id: str = "default", user_id: str | None = None
-    ) -> dict[str, Any]:
+    def handle_chat(self, user_query: str, session_id: str = "default", active_context: dict[str, Any] | None = None, low_memory_mode: bool = False) -> dict[str, Any]:
         """
-        Synchronous fallback for processing chat requests. 
-        Functions identically to `stream_chat` but blocks until the entire payload is ready.
+        Synchronous wrapper around the stream_chat generator.
+        Useful for standard REST endpoints that do not want to parse SSE.
         """
-        start_time = time.time()
-        logger.info(f"Handling chat query: '{user_query}' for session: {session_id}")
-
-        try:
-            intent_request = IntentRequest(user_query=user_query)
-            multi_route = intent_router_service.route(intent_request)
-            route_result: IntentResult = multi_route.primary_intent
-
-            logger.info(
-                f"Routed intent: {route_result.intent} -> tool: {route_result.tool} (Confidence: {route_result.confidence})"
-            )
-
-            # Confidence Thresholding
-            if route_result.confidence < 0.70 or route_result.tool == "unknown" or route_result.intent == IntentName.UNKNOWN:
-                ambiguous_res = {
-                    "status": "ambiguous",
-                    "tool": "unknown",
-                    "message": "Your query is too broad or ambiguous. How would you like to proceed?",
-                    "clarification_options": [
-                        "Generate an E2E Test Suite (e.g., Procure to Pay)",
-                        "Assess Test Risks & Flakiness",
-                        "Recommend Self-Healing Locator Fixes",
-                        "Group scripts by Process Area",
-                    ],
-                    "reasoning": "Confidence score is below threshold or intent is unknown."
-                }
-                audit_repository.log_execution(
-                    tool_name="unknown",
-                    intent=str(route_result.intent),
-                    arguments_json={},
-                    status="ambiguous",
-                    records_returned=0,
-                    duration_ms=int((time.time() - start_time) * 1000),
-                    session_id=session_id,
-                )
-                return ambiguous_res
-
-            res = self.execute_tool(
-                route_result.tool, route_result.arguments, session_id=session_id
-            )
-            if isinstance(res, dict):
-                res.setdefault("tool", route_result.tool)
-
-            duration_ms = int((time.time() - start_time) * 1000)
-            rec_count = len(res.get("execution_steps", [])) or len(res.get("matches", [])) or len(res.get("risk_items", [])) or 1
-            audit_repository.log_execution(
-                tool_name=route_result.tool,
-                intent=str(route_result.intent),
-                arguments_json=route_result.arguments,
-                status=res.get("status", "success"),
-                records_returned=rec_count,
-                duration_ms=duration_ms,
-                session_id=session_id,
-            )
-            return res
-        except Exception as exc:
-            logger.exception("Unhandled error in handle_chat pipeline")
-            audit_repository.log_execution(
-                tool_name="unknown",
-                status="error",
-                error_message=str(exc),
-                duration_ms=int((time.time() - start_time) * 1000),
-                session_id=session_id,
-            )
-            return {
-                "status": "internal_error",
-                "tool": "unknown",
-                "message": "An internal system error occurred.",
-                "reasoning": str(exc),
-            }
+        final_result = None
+        for chunk in self.stream_chat(user_query, session_id=session_id, active_context=active_context, low_memory_mode=low_memory_mode):
+            if chunk.startswith("data: "):
+                try:
+                    payload = json.loads(chunk[6:].strip())
+                    if payload.get("type") == "done":
+                        results = payload.get("results", [])
+                        if results:
+                            final_result = results[0]
+                except Exception:
+                    pass
+        return final_result or {"status": "error", "message": "No result generated"}
 
 
     # ── backend tool execution mapping ──────────────────────────────────
@@ -335,6 +304,13 @@ class ToolRegistryService:
 
             elif tool_name == "analyze_entity":
                 identifier = arguments.get("identifier", "")
+                
+                # Fallback to active context if user is chatting about currently open script
+                test_data = arguments.get("test_data")
+                if not identifier and test_data and test_data.get("active_context"):
+                    if test_data["active_context"].get("type") == "script":
+                        identifier = test_data["active_context"].get("id", "")
+                        
                 error_log_val = arguments.get("error_log") or arguments.get("error") or arguments.get("log") or ""
                 if error_log_val:
                     return failure_analysis_service.analyze_failure(
@@ -404,7 +380,9 @@ class ToolRegistryService:
                 return analytics_service.analyze_results(timeframe=timeframe, module=module, status=status)
 
             elif tool_name == "detect_duplicates":
-                from app.services.duplicate_detection_service import duplicate_detection_service
+                from app.services.duplicate_detection_service import (
+                    duplicate_detection_service,
+                )
                 module = arguments.get("module") or ""
                 return duplicate_detection_service.detect_duplicates(module=module)
                 
@@ -412,6 +390,12 @@ class ToolRegistryService:
                 from app.services.locator_linting_service import locator_linting_service
                 module = arguments.get("module") or ""
                 return locator_linting_service.lint_locators(module=module)
+
+            elif tool_name == "analyze_oracle_patch":
+                from app.services.oracle_patch_bot_service import (
+                    oracle_patch_bot_service,
+                )
+                return oracle_patch_bot_service.analyze_oracle_patch_sync(arguments, session_id=session_id)
 
             else:
                 return {
