@@ -9,8 +9,9 @@
 ![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-DC382D?logo=qdrant&logoColor=white)
 ![Ollama](https://img.shields.io/badge/Local%20LLM-Qwen%202.5-black?logo=ollama&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Hybrid%20RAG%20%7C%20Zero--Hardcoding-success)
+![Performance](https://img.shields.io/badge/Performance-Enterprise%20Ready%20%7C%20Low%20Memory%20Mode-ff69b4)
 
-**A PostgreSQL-grounded, enterprise autonomous AI test intelligence platform for Oracle Cloud ERP QA automation, hybrid RAG semantic discovery, dynamic test step synthesis, failure diagnosis, and self-healing locator repair.**
+**A PostgreSQL-grounded, enterprise autonomous AI test intelligence platform for Oracle Cloud ERP QA automation, featuring hybrid RAG semantic discovery, concurrent multi-intent execution, fast-mode indexing, and self-healing locator repair—optimized to run flawlessly even on low-spec developer laptops.**
 
 [Features](#-key-capabilities) • [Architecture](#-system-architecture) • [UI Overview](#-enterprise-web-interface) • [Guardrails](#-engineering-guardrails) • [Quickstart](#-quickstart--installation) • [API Reference](#-api-reference) • [Testing](#-testing--quality-assurance)
 
@@ -23,6 +24,8 @@
 Enterprise ERP testing across platforms like Oracle Fusion Cloud (Procure to Pay, Order to Cash, Record to Report, HCM, SCM) is notoriously complex. Test suites suffer from fragile UI dynamic locators, complex multi-stage business rules, lack of semantic searchability, and opaque test failures.
 
 **WinfoTest AI** bridges this gap by acting as an autonomous intelligence and reasoning layer over PostgreSQL test metadata and Qdrant vector spaces. It operates under a **Zero-Hardcoding & 100% Dynamic Grounding Policy**, translating natural language business queries into verified database lookups, high-depth test script generation (15+ steps), automated failure root-cause analysis, and self-healing Playwright/Selenium locator repairs.
+
+The platform is designed to be **Enterprise Ready**, featuring concurrent multi-intent query execution, blazing-fast vector indexing, and a **Low Memory / Fast Mode** that dynamically throttles CPU threads so the AI can run smoothly alongside local IDEs on any developer machine.
 
 ---
 
