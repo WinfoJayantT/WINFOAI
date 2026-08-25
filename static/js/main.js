@@ -2136,10 +2136,10 @@
                      }
                      // Add animated step
                      const stepId = 'step-' + Date.now();
-                     const stepHtml = \<div id="" class="text-[10px] font-geist-mono text-graphite dark:text-pewter flex items-center gap-2">
+                     const stepHtml = `<div id="${stepId}" class="text-[10px] font-geist-mono text-graphite dark:text-pewter flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-ember-red animate-pulse"></span>
-                        <span>\</span>
-                     </div>\;
+                        <span>${escapeHtml(data.message)}</span>
+                     </div>`;
                      thinkingTimeline.insertAdjacentHTML('beforeend', stepHtml);
                      
                      // If complete, fade out the whole timeline after a short delay
