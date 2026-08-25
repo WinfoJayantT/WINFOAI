@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -94,4 +94,48 @@ class AnalyticsService:
                 "reasoning": str(e)
             }
 
+    def get_test_health_trend(self, days: int = 7) -> dict:
+        """Generates daily pass/fail count buckets for Chart.js bar chart.
+
+        Args:
+            days (int): Number of historical days (default: 7).
+
+        Returns:
+            Dict with labels, passed counts, failed counts, and total_runs.
+        """
+        from datetime import datetime, timedelta, timezone
+
+        from sqlalchemy import select
+
+        from app.repositories.db import get_session
+        from app.winfo_test_orm.models.test_run_scripts import TestRunScripts
+
+        now = datetime.now(timezone.utc)
+        threshold = now - timedelta(days=days)
+        date_buckets = {}
+        for i in range(days):
+            day = (now - timedelta(days=days - 1 - i)).strftime("%Y-%m-%d")
+            date_buckets[day] = {"passed": 0, "failed": 0}
+        try:
+            with get_session() as db:
+                stmt = select(TestRunScripts).where(TestRunScripts.creation_date >= threshold)
+                for row in db.execute(stmt).scalars().all():
+                    if not row.creation_date:
+                        continue
+                    day_key = row.creation_date.strftime("%Y-%m-%d")
+                    if day_key not in date_buckets:
+                        continue
+                    sc = (row.execution_status_code or "").upper()
+                    if sc == "PASSED":
+                        date_buckets[day_key]["passed"] += 1
+                    elif sc == "FAILED":
+                        date_buckets[day_key]["failed"] += 1
+            labels = list(date_buckets.keys())
+            passed = [date_buckets[d]["passed"] for d in labels]
+            failed = [date_buckets[d]["failed"] for d in labels]
+            return {"status": "success", "labels": labels, "passed": passed, "failed": failed, "total_runs": sum(passed) + sum(failed)}
+        except Exception as exc:
+            logger.error(f"Error in get_test_health_trend: {exc}")
+            return {"status": "error", "labels": [], "passed": [], "failed": [], "total_runs": 0}
 analytics_service = AnalyticsService()
+

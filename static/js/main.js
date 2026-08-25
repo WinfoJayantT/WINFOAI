@@ -1502,6 +1502,9 @@
       }
     };
 
+    let passRateChartInstance = null;
+    let toolUsageChartInstance = null;
+
     window.fetchBentoData = async function() {
       try {
         const res = await fetch('/api/v1/analytics/overview');
@@ -1509,39 +1512,124 @@
         const data = await res.json();
         
         if (data.status === 'success') {
+          // KPI Row 1
+          document.getElementById('kpi-total-calls').innerText = data.telemetry?.total_calls || 0;
+          document.getElementById('kpi-avg-latency').innerText = (data.telemetry?.avg_duration_ms || 320) + 'ms';
+          document.getElementById('kpi-success-rate').innerText = (data.telemetry?.success_rate || 98.6) + '%';
+          document.getElementById('kpi-health-score').innerText = data.health?.overall_score || 92;
+
           // Vector Store
-          document.getElementById('bento-total-chunks').innerText = (data.vector_store.total_chunks || 0).toLocaleString();
-          document.getElementById('bento-dim').innerText = (data.vector_store.dimension || 768) + '-d';
-          document.getElementById('bento-model').innerText = data.vector_store.embedding_model || 'all-mpnet-base-v2';
-          document.getElementById('bento-collection').innerText = data.vector_store.collection_name || 'winfotest_semantic_scripts';
-          document.getElementById('bento-qdrant-status').innerText = 'QDRANT ' + (data.vector_store.status || 'ONLINE');
+          if (document.getElementById('bento-total-chunks')) document.getElementById('bento-total-chunks').innerText = (data.vector_store?.total_chunks || 0).toLocaleString();
+          if (document.getElementById('bento-dim')) document.getElementById('bento-dim').innerText = (data.vector_store?.dimension || 768) + '-d';
+          if (document.getElementById('bento-model')) document.getElementById('bento-model').innerText = data.vector_store?.embedding_model || 'all-mpnet-base-v2';
+          if (document.getElementById('bento-collection')) document.getElementById('bento-collection').innerText = data.vector_store?.collection_name || 'winfotest_semantic_scripts';
+          if (document.getElementById('bento-qdrant-status')) document.getElementById('bento-qdrant-status').innerText = 'QDRANT ' + (data.vector_store?.status || 'ONLINE');
           
           // Indexation
-          document.getElementById('bento-sync-pct').innerText = (data.indexation.sync_percentage || 100) + '%';
-          document.getElementById('bento-synced-count').innerText = (data.indexation.indexed_scripts || 0) + ' / ' + (data.indexation.total_scripts || 0);
-          document.getElementById('bento-stale-chunks').innerText = data.indexation.stale_chunks || 0;
-          document.getElementById('bento-sync-bar').style.width = (data.indexation.sync_percentage || 100) + '%';
-
-          // Health
-          document.getElementById('bento-health-score').innerText = data.health.overall_score || 92;
-          document.getElementById('bento-flaky-count').innerText = data.health.flaky_count || 0;
-          document.getElementById('bento-high-risk').innerText = data.health.high_risk_count || 0;
+          if (document.getElementById('bento-sync-pct')) document.getElementById('bento-sync-pct').innerText = (data.indexation?.sync_percentage || 100) + '%';
+          if (document.getElementById('bento-synced-count')) document.getElementById('bento-synced-count').innerText = (data.indexation?.indexed_scripts || 0) + ' / ' + (data.indexation?.total_scripts || 0);
+          if (document.getElementById('bento-stale-chunks')) document.getElementById('bento-stale-chunks').innerText = data.indexation?.stale_chunks || 0;
+          if (document.getElementById('bento-sync-bar')) document.getElementById('bento-sync-bar').style.width = (data.indexation?.sync_percentage || 100) + '%';
           
           // Server
-          document.getElementById('server-fastapi').innerText = data.server.fastapi + ' (8000)';
-          document.getElementById('server-postgres').innerText = data.server.postgres;
-          document.getElementById('server-qdrant').innerText = data.server.qdrant + ' (6333)';
-          document.getElementById('bento-llm-name').innerText = data.server.llm_engine || 'Qwen 2.5 Coder';
+          if (document.getElementById('server-fastapi')) document.getElementById('server-fastapi').innerText = data.server?.fastapi + ' (8000)';
+          if (document.getElementById('server-postgres')) document.getElementById('server-postgres').innerText = data.server?.postgres;
+          if (document.getElementById('server-qdrant')) document.getElementById('server-qdrant').innerText = data.server?.qdrant + ' (6333)';
+          if (document.getElementById('bento-llm-name')) document.getElementById('bento-llm-name').innerText = data.server?.llm_engine || 'Qwen 2.5 Coder';
 
-          // Telemetry
-          if (data.telemetry) {
-            document.getElementById('bento-total-calls').innerText = (data.telemetry.total_calls || 0) + ' Invocations';
-            document.getElementById('bento-avg-latency').innerText = (data.telemetry.avg_duration_ms || 320) + 'ms';
-            document.getElementById('bento-success-rate').innerText = (data.telemetry.success_rate || 98.6) + '%';
-            document.getElementById('bento-error-count').innerText = data.telemetry.error_count || 0;
+          // Old Telemetry fallback (if they exist)
+          if (document.getElementById('bento-total-calls')) document.getElementById('bento-total-calls').innerText = (data.telemetry?.total_calls || 0) + ' Invocations';
+          if (document.getElementById('bento-avg-latency')) document.getElementById('bento-avg-latency').innerText = (data.telemetry?.avg_duration_ms || 320) + 'ms';
+          if (document.getElementById('bento-success-rate')) document.getElementById('bento-success-rate').innerText = (data.telemetry?.success_rate || 98.6) + '%';
+          if (document.getElementById('bento-error-count')) document.getElementById('bento-error-count').innerText = data.telemetry?.error_count || 0;
+
+          // Render Tool Usage Donut
+          if (data.telemetry && data.telemetry.tool_distribution) {
+            const toolCtx = document.getElementById('tool-usage-chart');
+            if (toolCtx) {
+              const toolLabels = Object.keys(data.telemetry.tool_distribution);
+              const toolData = Object.values(data.telemetry.tool_distribution);
+              
+              if (toolUsageChartInstance) toolUsageChartInstance.destroy();
+              toolUsageChartInstance = new Chart(toolCtx, {
+                type: 'doughnut',
+                data: {
+                  labels: toolLabels,
+                  datasets: [{
+                    data: toolData,
+                    backgroundColor: ['#27c93f', '#cc2e39', '#eef1f0', '#606562', '#363537', '#1a211e'],
+                    borderWidth: 0
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '75%',
+                  plugins: {
+                    legend: { position: 'right', labels: { color: '#cccfcd', font: { family: 'Geist' }, boxWidth: 10 } }
+                  }
+                }
+              });
+            }
           }
         }
         
+        // Fetch Trend Data
+        const trendRes = await fetch('/api/v1/analytics/test-health');
+        if (trendRes.ok) {
+           const trendData = await trendRes.json();
+           if (trendData.status === 'success') {
+             const trendCtx = document.getElementById('pass-rate-chart');
+             if (trendCtx) {
+               if (passRateChartInstance) passRateChartInstance.destroy();
+               
+               if (document.getElementById('trend-total-runs')) document.getElementById('trend-total-runs').innerText = trendData.total_runs + ' total runs';
+               
+               passRateChartInstance = new Chart(trendCtx, {
+                 type: 'bar',
+                 data: {
+                   labels: trendData.labels,
+                   datasets: [
+                     { label: 'Passed', data: trendData.passed, backgroundColor: '#27c93f' },
+                     { label: 'Failed', data: trendData.failed, backgroundColor: '#cc2e39' }
+                   ]
+                 },
+                 options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   scales: {
+                     x: { stacked: true, grid: { display: false } },
+                     y: { stacked: true, grid: { color: '#333' } }
+                   },
+                   plugins: {
+                     legend: { display: false }
+                   }
+                 }
+               });
+             }
+           }
+        }
+
+        // Fetch Oracle Bot Status
+        const botRes = await fetch('/api/v1/oracle-bot/status');
+        if (botRes.ok) {
+           const botData = await botRes.json();
+           if (botData.status === 'success') {
+             if (document.getElementById('bot-status-badge')) {
+               document.getElementById('bot-status-badge').innerText = botData.bot_running ? 'ACTIVE' : 'IDLE';
+             }
+             if (document.getElementById('bot-last-run')) {
+               document.getElementById('bot-last-run').innerText = botData.last_run ? new Date(botData.last_run).toLocaleString() : 'Never';
+             }
+             if (document.getElementById('bot-scripts-scanned')) {
+               document.getElementById('bot-scripts-scanned').innerText = botData.scripts_scanned || 0;
+             }
+             if (document.getElementById('bot-patches-applied')) {
+               document.getElementById('bot-patches-applied').innerText = botData.patches_applied || 0;
+             }
+           }
+        }
+
         // Fetch Risk Matrix
         const riskRes = await fetch('/api/v1/analytics/risk');
         if (riskRes.ok) {
@@ -2037,7 +2125,35 @@
                 const dataStr = line.replace('data: ', '');
                 try {
                   const data = JSON.parse(dataStr);
-                  if (data.type === 'token') {
+                  if (data.type === 'thinking_step') {
+                     // Ensure thinking timeline exists
+                     let thinkingTimeline = document.getElementById('thinking-timeline');
+                     if (!thinkingTimeline) {
+                        thinkingTimeline = document.createElement('div');
+                        thinkingTimeline.id = 'thinking-timeline';
+                        thinkingTimeline.className = 'flex flex-col gap-2 mb-3 px-2 border-l-2 border-carbon-ink dark:border-mist ml-2 opacity-80';
+                        msgEl.before(thinkingTimeline);
+                     }
+                     // Add animated step
+                     const stepId = 'step-' + Date.now();
+                     const stepHtml = \<div id="" class="text-[10px] font-geist-mono text-graphite dark:text-pewter flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-ember-red animate-pulse"></span>
+                        <span>\</span>
+                     </div>\;
+                     thinkingTimeline.insertAdjacentHTML('beforeend', stepHtml);
+                     
+                     // If complete, fade out the whole timeline after a short delay
+                     if (data.stage === 'complete') {
+                        setTimeout(() => {
+                           if (thinkingTimeline) {
+                              thinkingTimeline.style.transition = "opacity 0.5s ease-out, height 0.5s ease-out";
+                              thinkingTimeline.style.opacity = '0';
+                              setTimeout(() => thinkingTimeline.remove(), 500);
+                           }
+                        }, 2000);
+                     }
+                     feed.scrollTop = feed.scrollHeight;
+                  } else if (data.type === 'token') {
                     botMessageHtml += data.content;
                     // Format markdown if available, else escape
                     if (typeof formatMarkdownToHtml === 'function') {
@@ -2087,3 +2203,25 @@
         }
       });
     }
+    window.runOracleBot = async function() {
+      const btn = document.getElementById('oracle-bot-btn');
+      if (btn) {
+         btn.innerText = 'Running...';
+         btn.disabled = true;
+         btn.classList.add('opacity-50');
+      }
+      try {
+        const res = await fetch('/api/v1/oracle-bot/run', {method: 'POST'});
+        if (res.ok) {
+           window.fetchBentoData(); // Refresh UI
+        }
+      } catch (e) {
+        console.error('Error running bot', e);
+      } finally {
+        if (btn) {
+           btn.innerText = 'Run Now';
+           btn.disabled = false;
+           btn.classList.remove('opacity-50');
+        }
+      }
+    };

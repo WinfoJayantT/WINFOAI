@@ -1,10 +1,10 @@
 <div id="bento-analytics-view" class="hidden-state flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col gap-8 motion-fade-slide">
-        
+
         <!-- View Banner -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-mist dark:border-slate pb-6">
           <div>
             <span class="font-bryant text-xs text-graphite dark:text-pewter uppercase tracking-bryant font-bold block">Enterprise Diagnostics // Analytics</span>
-            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Vector Index & System Bento Grid</h2>
+            <h2 class="font-exposure text-2xl lg:text-3xl text-carbon-ink dark:text-paper-white font-bold tracking-tight">Live Telemetry & System Health</h2>
           </div>
           <div class="flex items-center gap-3">
             <button onclick="fetchBentoData()" class="px-4 py-2 border border-carbon-ink dark:border-mist text-carbon-ink dark:text-mist hover:bg-carbon-ink hover:text-white dark:hover:bg-mist dark:hover:text-carbon-ink rounded-buttons font-bryant text-xs uppercase tracking-bryant font-bold transition-all motion-hover cursor-pointer">
@@ -16,24 +16,72 @@
           </div>
         </div>
 
-        <!-- Bento Grid Containers -->
+        <!-- Row 1: KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-[#050505] text-white border border-[#222] rounded-cards p-5 flex flex-col gap-1 shadow-sm motion-hover scanline-container">
+            <span class="text-[10px] font-geist text-graphite uppercase tracking-wider">Total AI Calls</span>
+            <span class="font-exposure text-3xl font-bold text-carbon-ink dark:text-paper-white" id="kpi-total-calls">--</span>
+            <span class="text-[10px] text-graphite font-geist">Lifetime invocations</span>
+          </div>
+          <div class="bg-[#050505] text-white border border-[#222] rounded-cards p-5 flex flex-col gap-1 shadow-sm motion-hover scanline-container">
+            <span class="text-[10px] font-geist text-graphite uppercase tracking-wider">Avg Latency</span>
+            <span class="font-exposure text-3xl font-bold text-carbon-ink dark:text-paper-white" id="kpi-avg-latency">--</span>
+            <span class="text-[10px] text-graphite font-geist">ms per request</span>
+          </div>
+          <div class="bg-[#050505] text-white border border-[#222] rounded-cards p-5 flex flex-col gap-1 shadow-sm motion-hover scanline-container">
+            <span class="text-[10px] font-geist text-graphite uppercase tracking-wider">Success Rate</span>
+            <span class="font-exposure text-3xl font-bold text-[#27c93f] cyber-glow-green" id="kpi-success-rate">--</span>
+            <span class="text-[10px] text-graphite font-geist">of all tool executions</span>
+          </div>
+          <div class="bg-[#050505] text-white border border-[#222] rounded-cards p-5 flex flex-col gap-1 shadow-sm motion-hover scanline-container">
+            <span class="text-[10px] font-geist text-graphite uppercase tracking-wider">Health Score</span>
+            <span class="font-exposure text-3xl font-bold text-carbon-ink dark:text-paper-white" id="kpi-health-score">--</span>
+            <span class="text-[10px] text-graphite font-geist" id="kpi-health-label">Test suite stability</span>
+          </div>
+        </div>
+
+        <!-- Row 2: Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+          <!-- Pass/Fail Trend (takes 2 cols) -->
+          <div class="lg:col-span-2 bg-[#050505] text-white border border-[#222] rounded-cards p-6 shadow-sm motion-hover scanline-container flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold">7-Day Pass / Fail Trend</span>
+              <span class="text-[10px] font-geist-mono text-graphite" id="trend-total-runs">0 total runs</span>
+            </div>
+            <div class="relative h-48">
+              <canvas id="pass-rate-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Tool Usage Donut -->
+          <div class="bg-[#050505] text-white border border-[#222] rounded-cards p-6 shadow-sm motion-hover scanline-container flex flex-col gap-3">
+            <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold">AI Tool Usage</span>
+            <div class="relative h-48 flex items-center justify-center">
+              <canvas id="tool-usage-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 3: Bento Grid (Vector + Indexation + System) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
-          
-          <!-- Bento Box 1: Vector Store & Chunks (Large 2 Col) -->
+
+          <!-- Bento Box 1: Vector Store -->
           <div class="md:col-span-2 bg-obsidian text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-lg flex flex-col justify-between motion-hover">
             <div class="flex justify-between items-center mb-4">
               <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold flex items-center gap-2">
                 <span> Vector Store Chunks</span>
               </span>
               <span class="text-[#27c93f] cyber-glow-green font-geist-mono text-xs flex items-center gap-1.5">
-                <span class="w-2 h-2 bg-[#27c93f] rounded-full inline-block "></span>
+                <span class="w-2 h-2 bg-[#27c93f] rounded-full inline-block"></span>
                 <span id="bento-qdrant-status">QDRANT ONLINE</span>
               </span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
               <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
                 <span class="text-[10px] text-graphite font-geist uppercase block mb-1">TOTAL CHUNKS</span>
-                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-total-chunks">1,482</span>
+                <span class="font-geist-mono text-2xl font-bold text-white cyber-glow" id="bento-total-chunks">--</span>
               </div>
               <div class="bg-[#080808] border border-[#1a1a1a] rounded-cards p-3 text-center">
                 <span class="text-[10px] text-graphite font-geist uppercase block mb-1">EMBEDDING DIM</span>
@@ -54,132 +102,131 @@
             </div>
           </div>
 
-          <!-- Bento Box 2: Indexation Synchronization -->
-          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+          <!-- Bento Box 2: Indexation Sync -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-sm flex flex-col justify-between motion-hover">
             <div class="flex justify-between items-center mb-3">
-              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> Index Coverage</span>
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold"> Index Coverage</span>
               <span class="text-xs font-geist-mono font-bold text-carbon-ink dark:text-paper-white" id="bento-sync-pct">100%</span>
             </div>
             <div class="my-3">
-              <div class="flex justify-between text-xs font-geist text-graphite dark:text-ash-border mb-1">
+              <div class="flex justify-between text-xs font-geist text-graphite mb-1">
                 <span>Synced Scripts</span>
-                <span class="font-geist-mono font-semibold text-carbon-ink dark:text-paper-white" id="bento-synced-count">42 / 42</span>
+                <span class="font-geist-mono font-semibold text-carbon-ink dark:text-paper-white" id="bento-synced-count">-- / --</span>
               </div>
               <div class="w-full bg-fog dark:bg-slate h-2.5 rounded-badges overflow-hidden">
                 <div id="bento-sync-bar" class="bg-carbon-ink dark:bg-mist h-full rounded-badges transition-all duration-500" style="width: 100%;"></div>
               </div>
             </div>
-            <div class="text-[11px] font-geist text-graphite dark:text-ash-border flex justify-between pt-2 border-t border-mist dark:border-slate">
+            <div class="text-[11px] font-geist text-graphite flex justify-between pt-2 border-t border-mist dark:border-slate">
               <span>Stale Chunks: <strong class="text-carbon-ink dark:text-paper-white" id="bento-stale-chunks">0</strong></span>
               <span>DB Sync: <strong class="text-[#27c93f] cyber-glow-green">PostgreSQL</strong></span>
             </div>
           </div>
 
-          <!-- Bento Box 3: Repository Health Score -->
-          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] flex flex-col justify-between motion-hover shadow-sm">
+          <!-- Bento Box 3: Oracle Patch Bot -->
+          <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-sm flex flex-col justify-between motion-hover">
             <div class="flex justify-between items-center mb-3">
-              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Health Score</span>
-              <span class="text-xs font-geist-mono font-bold text-[#27c93f] cyber-glow-green" id="bento-health-badge">STABLE</span>
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold"> Oracle Patch Bot</span>
+              <span class="text-xs font-geist-mono font-bold text-[#27c93f] cyber-glow-green" id="bot-status-badge">IDLE</span>
             </div>
-            <div class="flex items-center gap-4 my-2">
-              <span class="font-exposure text-4xl font-bold text-carbon-ink dark:text-paper-white" id="bento-health-score">92</span>
-              <div class="flex flex-col text-xs font-geist text-graphite dark:text-ash-border">
-                <span>Flaky Scripts: <strong class="text-ember-red font-semibold" id="bento-flaky-count">2</strong></span>
-                <span>High Risk: <strong class="text-ember-red font-semibold" id="bento-high-risk">2</strong></span>
+            <div class="flex flex-col gap-2 my-2 text-xs font-geist text-graphite">
+              <div class="flex justify-between">
+                <span>Last Run</span>
+                <span class="font-geist-mono text-carbon-ink dark:text-paper-white" id="bot-last-run">Never</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Scripts Scanned</span>
+                <span class="font-geist-mono text-carbon-ink dark:text-paper-white" id="bot-scripts-scanned">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Patches Applied</span>
+                <span class="font-geist-mono text-[#27c93f] cyber-glow-green font-semibold" id="bot-patches-applied">0</span>
               </div>
             </div>
-            <div class="text-[11px] font-geist text-graphite dark:text-ash-border pt-2 border-t border-mist dark:border-slate">
-              <span>Calculated from historical execution telemetry</span>
-            </div>
+            <button onclick="runOracleBot()" id="oracle-bot-btn" class="mt-2 w-full px-3 py-2 bg-ember-red hover:opacity-90 text-white rounded-buttons font-bryant text-[10px] uppercase tracking-bryant font-bold transition-all cursor-pointer">
+              Run Now
+            </button>
           </div>
 
-          <!-- Bento Box 4: Server & System Diagnostics (Large 2 Col) -->
-          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
+          <!-- Bento Box 4: Server Diagnostics -->
+          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-sm motion-hover flex flex-col justify-between">
             <div class="flex justify-between items-center mb-4">
-              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold">️ Server System Diagnostics</span>
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold"> Server System Diagnostics</span>
               <span class="text-xs font-geist-mono text-[#27c93f] cyber-glow-green font-semibold">ALL SYSTEMS ACTIVE</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">FASTAPI GATEWAY</span>
+                <span class="text-[10px] font-geist text-graphite block mb-1">FASTAPI GATEWAY</span>
                 <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (8000)</span>
               </div>
               <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">POSTGRESQL DB</span>
+                <span class="text-[10px] font-geist text-graphite block mb-1">POSTGRESQL DB</span>
                 <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">CONNECTED</span>
               </div>
               <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">QDRANT VECTOR</span>
+                <span class="text-[10px] font-geist text-graphite block mb-1">QDRANT VECTOR</span>
                 <span class="font-geist-mono text-xs font-bold text-[#27c93f] cyber-glow-green">ONLINE (6333)</span>
               </div>
               <div class="p-3 bg-fog dark:bg-[#151515] border border-ash-border dark:border-[#2a2a2a] rounded-cards text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block mb-1">LLM ENGINE</span>
+                <span class="text-[10px] font-geist text-graphite block mb-1">LLM ENGINE</span>
                 <span class="font-geist-mono text-xs font-bold text-carbon-ink dark:text-paper-white" id="bento-llm-name">Qwen 2.5 Coder</span>
               </div>
             </div>
           </div>
 
-          <!-- Bento Box 5: AI Telemetry & Latency (Large 2 Col) -->
-          <div class="md:col-span-2 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm flex flex-col justify-between">
-            <div class="flex justify-between items-center mb-4">
-              <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold"> AI Telemetry & Latency</span>
-              <span class="text-xs font-geist-mono text-carbon-ink dark:text-paper-white" id="bento-total-calls">142 Invocations</span>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mb-3">
-              <div class="text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">AVG LATENCY</span>
-                <span class="font-geist-mono text-lg font-bold text-carbon-ink dark:text-paper-white" id="bento-avg-latency">320ms</span>
-              </div>
-              <div class="text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">SUCCESS RATE</span>
-                <span class="font-geist-mono text-lg font-bold text-[#27c93f] cyber-glow-green" id="bento-success-rate">98.6%</span>
-              </div>
-              <div class="text-center">
-                <span class="text-[10px] font-geist text-graphite dark:text-pewter block">ERROR COUNT</span>
-                <span class="font-geist-mono text-lg font-bold text-ember-red" id="bento-error-count">0</span>
-              </div>
-            </div>
-            <div class="space-y-2 pt-2 border-t border-mist dark:border-slate">
-              <div class="flex justify-between text-[11px] font-geist text-graphite dark:text-ash-border">
-                <span>Semantic Vector Retrieval</span>
-                <span class="font-geist-mono">42%</span>
-              </div>
-              <div class="w-full bg-fog dark:bg-slate h-1.5 rounded-badges overflow-hidden">
-                <div class="bg-carbon-ink dark:bg-mist h-full" style="width: 42%;"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bento Box 6: Risk Assessment Matrix Table (Full 4 Col) -->
-          <div class="md:col-span-2 lg:col-span-4 bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] motion-hover shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-              <div>
-                <span class="font-bryant text-xs text-graphite dark:text-pewter tracking-bryant uppercase font-bold block"> Predictive Risk Assessment Matrix</span>
-                <p class="font-geist text-xs text-graphite dark:text-ash-border">Identifies dynamic DOM locator flakiness and execution velocity risks</p>
-              </div>
-              <input type="text" id="risk-search-input" onkeyup="filterRiskMatrix()" placeholder="Filter by script or module..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-1.5 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs font-geist">
-                <thead>
-                  <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite dark:text-pewter uppercase tracking-bryant">
-                    <th class="py-2.5 px-3">Script #</th>
-                    <th class="py-2.5 px-3">Script Name</th>
-                    <th class="py-2.5 px-3">Module</th>
-                    <th class="py-2.5 px-3 text-center">Risk Score</th>
-                    <th class="py-2.5 px-3 text-center">Tier</th>
-                    <th class="py-2.5 px-3">Fragile Step</th>
-                    <th class="py-2.5 px-3">Stabilization Recommendation</th>
-                  </tr>
-                </thead>
-                <tbody id="risk-matrix-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
-                  <tr>
-                    <td colspan="7" class="py-6 text-center text-graphite dark:text-pewter font-geist-mono">Loading risk matrix telemetry...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
         </div>
+
+        <!-- Row 4: AI Telemetry -->
+        <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-sm motion-hover">
+          <div class="flex justify-between items-center mb-4">
+            <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold"> AI Telemetry & Latency</span>
+            <span class="text-xs font-geist-mono text-carbon-ink dark:text-paper-white" id="bento-total-calls">-- Invocations</span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 mb-3">
+            <div class="text-center">
+              <span class="text-[10px] font-geist text-graphite block">AVG LATENCY</span>
+              <span class="font-geist-mono text-lg font-bold text-carbon-ink dark:text-paper-white" id="bento-avg-latency">--ms</span>
+            </div>
+            <div class="text-center">
+              <span class="text-[10px] font-geist text-graphite block">SUCCESS RATE</span>
+              <span class="font-geist-mono text-lg font-bold text-[#27c93f] cyber-glow-green" id="bento-success-rate">--%</span>
+            </div>
+            <div class="text-center">
+              <span class="text-[10px] font-geist text-graphite block">ERROR COUNT</span>
+              <span class="font-geist-mono text-lg font-bold text-ember-red" id="bento-error-count">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: Risk Assessment Matrix -->
+        <div class="bg-[#050505] text-white border border-[#222222] rounded-cards p-6 scanline-container shadow-sm motion-hover">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <div>
+              <span class="font-bryant text-xs text-graphite tracking-bryant uppercase font-bold block"> Predictive Risk Assessment Matrix</span>
+              <p class="font-geist text-xs text-graphite">Identifies dynamic DOM locator flakiness and execution velocity risks</p>
+            </div>
+            <input type="text" id="risk-search-input" onkeyup="filterRiskMatrix()" placeholder="Filter by script or module..." class="bg-fog dark:bg-[#151515] border border-ash-border dark:border-slate rounded-inputs px-3 py-1.5 text-xs font-geist text-carbon-ink dark:text-paper-white outline-none w-64">
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-geist">
+              <thead>
+                <tr class="border-b border-mist dark:border-slate font-bryant text-[11px] text-graphite uppercase tracking-bryant">
+                  <th class="py-2.5 px-3">Script #</th>
+                  <th class="py-2.5 px-3">Script Name</th>
+                  <th class="py-2.5 px-3">Module</th>
+                  <th class="py-2.5 px-3 text-center">Risk Score</th>
+                  <th class="py-2.5 px-3 text-center">Tier</th>
+                  <th class="py-2.5 px-3">Fragile Step</th>
+                  <th class="py-2.5 px-3">Stabilization Recommendation</th>
+                </tr>
+              </thead>
+              <tbody id="risk-matrix-body" class="divide-y divide-mist dark:divide-slate/40 text-carbon-ink dark:text-paper-white">
+                <tr>
+                  <td colspan="7" class="py-6 text-center text-graphite font-geist-mono">Loading risk matrix telemetry...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
