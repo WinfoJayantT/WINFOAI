@@ -135,11 +135,26 @@ class ToolRegistryService:
                 conversation_context=conversation_context,
                 app_context=test_data
             )
+            # ── THINKING STEP 1: routing ───────────────────────────────────
+            yield json.dumps({"type": "thinking_step", "stage": "routing", "message": "Analyzing query intent..."}) + "\n\n"
+            yield ""  # flush
+
             route_result: MultiIntentResult = intent_router_service.route(intent_request)
+
+            # ── THINKING STEP 2: tools resolved ───────────────────────────
+            resolved_tools = [r.tool for r in route_result.intents if r.confidence >= 0.60]
+            yield json.dumps({
+                "type": "thinking_step",
+                "stage": "tools_resolved",
+                "tools": resolved_tools,
+                "intent_count": len(resolved_tools),
+                "message": f"Resolved {len(resolved_tools)} action(s): {', '.join(resolved_tools)}" if resolved_tools else "Ambiguous query detected.",
+            }) + "\n\n"
+            yield ""  # flush
 
             tool_results = []
             ambiguous_intents = []
-            
+
             # 2. Parallel Execute Resolved Intents
             loop = asyncio.get_running_loop()
 
@@ -182,6 +197,18 @@ class ToolRegistryService:
                 )
                 return res
 
+            # ── THINKING STEP 3: executing ────────────────────────────────
+            for ir in route_result.intents:
+                if ir.confidence >= 0.60 and ir.tool != "unknown":
+                    yield json.dumps({
+                        "type": "thinking_step",
+                        "stage": "executing",
+                        "tool": ir.tool,
+                        "confidence": round(ir.confidence, 2),
+                        "message": f"Executing: {ir.tool} (confidence {round(ir.confidence * 100)}%)",
+                    }) + "\n\n"
+                    yield ""  # flush
+
             # Launch all intents concurrently
             tasks = [_execute_and_log(intent_res) for intent_res in route_result.intents]
             results = await asyncio.gather(*tasks)
@@ -210,6 +237,15 @@ class ToolRegistryService:
                 yield 'data: {"type": "token", "content": "I couldn\'t find any specific actions to take based on your request."}\n\n'
                 yield 'data: {"type": "done", "results": []}\n\n'
                 return
+
+            # ── THINKING STEP 4: complete ─────────────────────────────────
+            yield json.dumps({
+                "type": "thinking_step",
+                "stage": "complete",
+                "tool_count": len(tool_results),
+                "message": f"All {len(tool_results)} tool(s) complete. Rendering results...",
+            }) + "\n\n"
+            yield ""  # flush
 
             # 5. Emit successful final result payload back to UI
             final_payload = json.dumps({"type": "done", "results": tool_results}, default=str)

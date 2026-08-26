@@ -415,6 +415,40 @@ async def get_risk_matrix(query: str | None = None) -> dict[str, Any]:
         return {"status": "error", "message": "Failed to fetch risk matrix", "reasoning": str(exc)}
 
 
+
+
+@app.get('/api/v1/analytics/test-health')
+async def get_test_health_trend(days: int = 7):
+    """Returns daily pass/fail run counts for the last N days (Chart.js bar chart)."""
+    try:
+        from app.services.analytics_service import analytics_service
+        return analytics_service.get_test_health_trend(days=days)
+    except Exception as exc:
+        logger.exception('Error building test health trend')
+        return {'status': 'error', 'message': 'Failed.', 'reasoning': str(exc)}
+
+
+@app.get('/api/v1/oracle-bot/status')
+async def get_oracle_bot_status():
+    """Returns current Oracle Patch Bot status, last run time, and patches applied."""
+    try:
+        from app.services.oracle_patch_bot_service import oracle_patch_bot_service
+        return oracle_patch_bot_service.get_bot_status()
+    except Exception as exc:
+        logger.exception('Error fetching oracle bot status')
+        return {'status': 'error', 'message': 'Failed.', 'reasoning': str(exc)}
+
+
+@app.post('/api/v1/oracle-bot/run')
+async def run_oracle_bot():
+    """Manually triggers the Oracle Patch Bot autonomous self-healing loop."""
+    try:
+        from app.services.oracle_patch_bot_service import oracle_patch_bot_service
+        return await oracle_patch_bot_service.run_autonomous_healing()
+    except Exception as exc:
+        logger.exception('Error running oracle bot')
+        return {'status': 'error', 'message': 'Failed.', 'reasoning': str(exc)}
+
 @app.get("/api/v1/clusters/duplicates")
 async def get_duplicate_clusters(module: str | None = None) -> dict[str, Any]:
     """
